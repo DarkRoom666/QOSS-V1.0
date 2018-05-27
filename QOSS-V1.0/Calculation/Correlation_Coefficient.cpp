@@ -1,6 +1,6 @@
 #include "Correlation_Coefficient.h"
 
-void Correlation_Coefficient_Omega(double frequency0, double ds, int N0,
+void Correlation_Coefficient_Omega(double frequency0, double ds, int M0, int N0,
 	const vector <vector <complex<double>>> &EX,
 	const vector <vector <complex<double>>> &EY,
 	int &index, int &MaxE_i, int &MaxE_j, double &W0)
@@ -14,7 +14,7 @@ void Correlation_Coefficient_Omega(double frequency0, double ds, int N0,
 	int MaxEY_j = 0;
 
 	//首先找到场强最大值,然后找到场强最大值所在的ii,jj
-	for (int i = 0; i < N0; i++)
+	for (int i = 0; i < M0; i++)
 		for (int j = 0; j < N0; j++)
 		{
 			{
@@ -48,10 +48,10 @@ void Correlation_Coefficient_Omega(double frequency0, double ds, int N0,
 		index = 1;
 	}
 
-	vector <vector <double>> AbsE(N0, vector<double>(N0, 0));//主极化电场幅度值
+	vector <vector <double>> AbsE(M0, vector<double>(N0, 0));//主极化电场幅度值
 	if (MaxEX > MaxEY)
 	{
-		for (int i = 0; i < N0; i++)
+		for (int i = 0; i < M0; i++)
 			for (int j = 0; j < N0; j++)
 			{
 				{
@@ -61,7 +61,7 @@ void Correlation_Coefficient_Omega(double frequency0, double ds, int N0,
 	}
 	if (MaxEY > MaxEX)
 	{
-		for (int i = 0; i < N0; i++)
+		for (int i = 0; i < M0; i++)
 			for (int j = 0; j < N0; j++)
 			{
 				{
@@ -81,7 +81,7 @@ void Correlation_Coefficient_Omega(double frequency0, double ds, int N0,
 		}
 
 		int ii1 = MaxE_i;
-		for (int k = MaxE_i; k < N0 - 1; k++)
+		for (int k = MaxE_i; k < M0 - 1; k++)
 		{
 			ii1 = k;
 			if ((AbsE[k + 1][MaxE_j] <= (1.0 / Universal_Constant_e*MaxE))
@@ -112,17 +112,17 @@ void Correlation_Coefficient_Omega(double frequency0, double ds, int N0,
 }
 
 
-double Scalar_Correlation_Coefficient(double frequency0, double ds, int N0,
+double Scalar_Correlation_Coefficient(double frequency0, double ds, int M0, int N0,
 	const vector <vector <complex<double>>> &EX,
 	const vector <vector <complex<double>>> &EY)
 {
 	int index0 = 0; int MaxE_i0 = 0; int MaxE_j0 = 0; double w0 = 0;
-	Correlation_Coefficient_Omega(frequency0, ds, N0, EX, EY,
+	Correlation_Coefficient_Omega(frequency0, ds, M0, N0, EX, EY,
 		index0, MaxE_i0, MaxE_j0, w0);//先处理一下
 
 //高斯波束在束腰处的电场幅度值
-	vector <vector <complex<double>>> Gauss_E(N0, vector<complex<double>>(N0, 0));
-	for (int i = 0; i < N0; i++)
+	vector <vector <complex<double>>> Gauss_E(M0, vector<complex<double>>(N0, 0));
+	for (int i = 0; i < M0; i++)
 		for (int j = 0; j < N0; j++)
 		{ 
 			{
@@ -136,7 +136,7 @@ double Scalar_Correlation_Coefficient(double frequency0, double ds, int N0,
 	double scalar_coefficient = 0;
 	if (index0 == 0)//主极化为EX	
 	{
-		for (int i = 0; i < N0; i++)
+		for (int i = 0; i < M0; i++)
 			for (int j = 0; j < N0; j++)
 			{
 				{
@@ -149,7 +149,7 @@ double Scalar_Correlation_Coefficient(double frequency0, double ds, int N0,
 
 	if (index0 == 1)//主极化为EY	
 	{
-		for (int i = 0; i < N0; i++)
+		for (int i = 0; i < M0; i++)
 			for (int j = 0; j < N0; j++)
 			{
 				{
@@ -165,17 +165,17 @@ double Scalar_Correlation_Coefficient(double frequency0, double ds, int N0,
 }
 
 
-double Vector_Correlation_Coefficient(double frequency0, double ds, int N0,
+double Vector_Correlation_Coefficient(double frequency0, double ds, int M0, int N0,
 	const vector <vector <complex<double>>> &EX,
 	const vector <vector <complex<double>>> &EY)
 {
 	int index0 = 0; int MaxE_i0 = 0; int MaxE_j0 = 0; double w0 = 0;
-	Correlation_Coefficient_Omega(frequency0, ds, N0, EX, EY,
+	Correlation_Coefficient_Omega(frequency0, ds, M0, N0, EX, EY,
 		index0, MaxE_i0, MaxE_j0, w0);//先处理一下
 
 //高斯波束在束腰处的电场幅度值
 	vector <vector <complex<double>>> Gauss_E(N0, vector<complex<double>>(N0, 0));
-	for (int i = 0; i < N0; i++)
+	for (int i = 0; i < M0; i++)
 		for (int j = 0; j < N0; j++)
 		{
 			{
@@ -190,7 +190,7 @@ double Vector_Correlation_Coefficient(double frequency0, double ds, int N0,
 	double vector_coefficient = 0;
 	if (index0 == 0)//主极化为EX	
 	{
-		for (int i = 0; i < N0; i++)
+		for (int i = 0; i < M0; i++)
 			for (int j = 0; j < N0; j++)
 			{
 				{
@@ -204,7 +204,7 @@ double Vector_Correlation_Coefficient(double frequency0, double ds, int N0,
 
 	if (index0 == 1)//主极化为EY	
 	{
-		for (int i = 0; i < N0; i++)
+		for (int i = 0; i < M0; i++)
 			for (int j = 0; j < N0; j++)
 			{
 				{
@@ -221,18 +221,18 @@ double Vector_Correlation_Coefficient(double frequency0, double ds, int N0,
 }
 
 
-double Scalar_Correlation_Coefficient_TargetW0(double frequency0, double ds, int N0,
+double Scalar_Correlation_Coefficient_TargetW0(double frequency0, double ds, int M0, int N0,
 	const vector <vector <complex<double>>> &EX,
 	const vector <vector <complex<double>>> &EY,
 	double Target_W0)
 {
 	int index0 = 0; int MaxE_i0 = 0; int MaxE_j0 = 0; double w0 = 0;
-	Correlation_Coefficient_Omega(frequency0, ds, N0, EX, EY,
-		index0, MaxE_i0, MaxE_j0, w0);//先处理一下,wo不用
+	Correlation_Coefficient_Omega(frequency0, ds, M0, N0, EX, EY,
+		index0, MaxE_i0, MaxE_j0, w0);//先处理一下,w0不用
 
 //高斯波束在束腰处的电场幅度值
 	vector <vector <complex<double>>> Gauss_E(N0, vector<complex<double>>(N0, 0));
-	for (int i = 0; i < N0; i++)
+	for (int i = 0; i < M0; i++)
 		for (int j = 0; j < N0; j++)
 		{
 			{
@@ -246,7 +246,7 @@ double Scalar_Correlation_Coefficient_TargetW0(double frequency0, double ds, int
 	double scalar_coefficient = 0;
 	if (index0 == 0)//主极化为EX	
 	{
-		for (int i = 0; i < N0; i++)
+		for (int i = 0; i < M0; i++)
 			for (int j = 0; j < N0; j++)
 			{
 				{
@@ -259,7 +259,7 @@ double Scalar_Correlation_Coefficient_TargetW0(double frequency0, double ds, int
 
 	if (index0 == 1)//主极化为EY	
 	{
-		for (int i = 0; i < N0; i++)
+		for (int i = 0; i < M0; i++)
 			for (int j = 0; j < N0; j++)
 			{
 				{
@@ -275,18 +275,18 @@ double Scalar_Correlation_Coefficient_TargetW0(double frequency0, double ds, int
 }
 
 
-double Vector_Correlation_Coefficient_TargetW0(double frequency0, double ds, int N0,
+double Vector_Correlation_Coefficient_TargetW0(double frequency0, double ds, int M0, int N0,
 	const vector <vector <complex<double>>> &EX,
 	const vector <vector <complex<double>>> &EY,
 	double Target_W0)
 {
 	int index0 = 0; int MaxE_i0 = 0; int MaxE_j0 = 0; double w0 = 0;
-	Correlation_Coefficient_Omega(frequency0, ds, N0, EX, EY,
+	Correlation_Coefficient_Omega(frequency0, ds, M0, N0, EX, EY,
 		index0, MaxE_i0, MaxE_j0, w0);//先处理一下
 
 //高斯波束在束腰处的电场幅度值
 	vector <vector <complex<double>>> Gauss_E(N0, vector<complex<double>>(N0, 0));
-	for (int i = 0; i < N0; i++)
+	for (int i = 0; i < M0; i++)
 		for (int j = 0; j < N0; j++)
 		{
 			{
@@ -301,7 +301,7 @@ double Vector_Correlation_Coefficient_TargetW0(double frequency0, double ds, int
 	double vector_coefficient = 0;
 	if (index0 == 0)//主极化为EX	
 	{
-		for (int i = 0; i < N0; i++)
+		for (int i = 0; i < M0; i++)
 			for (int j = 0; j < N0; j++)
 			{
 				{
@@ -315,7 +315,7 @@ double Vector_Correlation_Coefficient_TargetW0(double frequency0, double ds, int
 
 	if (index0 == 1)//主极化为EY	
 	{
-		for (int i = 0; i < N0; i++)
+		for (int i = 0; i < M0; i++)
 			for (int j = 0; j < N0; j++)
 			{
 				{

@@ -588,7 +588,7 @@ void Field::setEfficiency(double temp)
 void Field::calcCorrelationCoefficient()
 {
 	double fre = MyData::getInstance()->getFrequency();
-	scalarCorrelationCoefficient = Scalar_Correlation_Coefficient(fre, ds, N_width, Ex, Ey);
-	vectorCorrelationCoefficient = Vector_Correlation_Coefficient(fre, ds, N_width, Ex, Ey);
+	scalarCorrelationCoefficient = Scalar_Correlation_Coefficient(fre, ds, N_width, M_depth, Ex, Ey);
+	vectorCorrelationCoefficient = Vector_Correlation_Coefficient(fre, ds, N_width, M_depth, Ex, Ey);
 
 }
