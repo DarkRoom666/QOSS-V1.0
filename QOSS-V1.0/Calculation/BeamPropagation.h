@@ -6,7 +6,7 @@
 //by XD 20180303
 //20180307测试正确，by XD
 //20180314再次测试斜高斯传播，正确,by XD
-
+//test
 #ifndef BEAMPROPAGATION_H
 #define BEAMPROPAGATION_H
 
