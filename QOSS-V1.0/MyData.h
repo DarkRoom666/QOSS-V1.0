@@ -88,7 +88,8 @@ public:
 
 	int save(const string & dir);
 
-	int open(const string & dir);
+	//【注意】 调用open成功后会修改原有的指针
+	static int open(const string & dir);
 
 	void clear();
 

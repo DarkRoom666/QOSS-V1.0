@@ -3,6 +3,7 @@
 #include <vtkPoints.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
+#include <iostream>
 
 
 CUDARayTracing::CUDARayTracing()
@@ -242,8 +243,8 @@ void CUDARayTracing::getRes(std::vector<Vector3> &normal,
 	{
 		
 		Vector3 NodesXYZ1(stlp1x[STLIndex[i]], stlp1y[STLIndex[i]], stlp1z[STLIndex[i]]);
-		Vector3 NodesXYZ2(stlp2x[STLIndex[i]], stlp2y[STLIndex[i]], stlp3z[STLIndex[i]]);
-		Vector3 NodesXYZ3(stlp3x[STLIndex[i]], stlp2y[STLIndex[i]], stlp3z[STLIndex[i]]);
+		Vector3 NodesXYZ2(stlp2x[STLIndex[i]], stlp2y[STLIndex[i]], stlp2z[STLIndex[i]]);
+		Vector3 NodesXYZ3(stlp3x[STLIndex[i]], stlp3y[STLIndex[i]], stlp3z[STLIndex[i]]);
 		Vector3 tempa = NodesXYZ1 - NodesXYZ2;
 		Vector3 tempb = NodesXYZ1 - NodesXYZ3;
 		normal[i] = tempa.Cross(tempb);  //∑®œÚ¡ø
@@ -251,4 +252,5 @@ void CUDARayTracing::getRes(std::vector<Vector3> &normal,
 		intersection[i] = Vector3(this->inter_x[i], this->inter_y[i], this->inter_z[i]);
 		isIntersect[i] = this->intersected[i];
 	}
+
 }

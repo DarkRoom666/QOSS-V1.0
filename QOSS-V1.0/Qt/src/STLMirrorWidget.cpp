@@ -6,7 +6,7 @@ using namespace userInterface;
 
 STLMirrorWidget::STLMirrorWidget(QWidget *parent)
 {
-	setWindowTitle(tr("Create paraboloid"));
+	setWindowTitle(tr("Create STL modle"));
 
 	defGroupBox = new QGroupBox;
 	addDefGroupBox(defGroupBox, "Qt/images/Paraboloid_coor.png");

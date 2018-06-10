@@ -792,14 +792,16 @@ void mainWindow::openFile()
 		tr("*.QOSS"));
 	if (!filename.isEmpty())
 	{
-		if (myData->open(filename.toStdString()) != 0) // open失败
+		if (MyData::open(filename.toStdString()) != 0) // open失败
 		{
 			QMessageBox::warning(NULL, "Error",
 				"open error!");
 			return;
 		}
 	}
-
+	
+	// 调用open后会修改原有的指针 因此需要重新赋值
+	myData = MyData::getInstance();
 	clear();
 
 	renderer = vtkSmartPointer<vtkRenderer>::New();

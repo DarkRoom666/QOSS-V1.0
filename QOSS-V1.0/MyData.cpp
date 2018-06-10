@@ -34,9 +34,13 @@ MyData::MyData()
 
 MyData::~MyData()
 {
-	if (_myData) {
-		delete _myData;
-		_myData = nullptr;
+	for (auto &x : mirrors)
+	{
+		if (x)
+		{
+			delete x;
+			x = nullptr;
+		}
 	}
 }
 
@@ -415,32 +419,43 @@ int MyData::save(const string & dir)
 
 int MyData::open(const string & dir)
 {
+	// 创建一个临时MyData 如果打开失败 不影响原有MyData
+	MyData * tempData = new MyData;
+	int status = 0;
+	shared_ptr<calculation::SourceModeGeneration> tempSource;
+	shared_ptr<LimitBox> limitBox;
+	Json::Reader reader;
+	Json::Value js;
 	ifstream file(dir);
 	if (!file.is_open())
 	{
-		return -1;
+		status = -1;
+		goto openErr;
 	}
-	Json::Reader reader;
-	Json::Value js;
+
 	if (!reader.parse(file, js))  // reader将Json字符串解析到root，root将包含Json里所有子元素  
 	{
-		return -1;
+		status = -2;
+		goto openErr;
 	}
 
 	// 确定版本
 	if (!js.isMember("Version"))
 	{
-		return -1;
+		status = -3;
+		goto openErr;
 	}
 	if (js["Version"].asDouble() < 0.0) //控制版本
 	{
-		return -1;
+		status = -3;
+		goto openErr;
 	}
 
 	// baseInfo
 	if (!js.isMember("baseInfo"))
 	{
-		return -1;
+		status = -4;
+		goto openErr;
 	}
 	const Json::Value & baseInfo = js["baseInfo"];
 
@@ -450,22 +465,27 @@ int MyData::open(const string & dir)
 		!baseInfo.isMember("nameProject") ||
 		!baseInfo["Box"])
 	{
-		return -1;
+		status = -5;
+		goto openErr;
 	}
-	frequency = baseInfo["frequency"].asDouble();
-	pattern = baseInfo["pattern"].asInt();
-	unit = baseInfo["unit"].asDouble();
-	nameProject = baseInfo["nameProject"].asString();
+	tempData->setFrequency(baseInfo["frequency"].asDouble());
+	tempData->setPattern(baseInfo["pattern"].asInt());
+	tempData->setUnit(baseInfo["unit"].asDouble());
+	tempData->setNameProject(baseInfo["nameProject"].asString());
 
+	limitBox = make_shared<LimitBox>(0,0,0);
 	if (limitBox->setDataJson(baseInfo["Box"]) != 0)
 	{
-		return -1;
+		status = -6;
+		goto openErr;
 	}
+	tempData->setLimitBox(limitBox);
 
 	// source
 	if (!js.isMember("Source"))
 	{
-		return -1;
+		status = -7;
+		goto openErr;
 	}
 	const Json::Value &jsSource = js["Source"];
 	if (!jsSource.isMember("SourceKind") ||
@@ -475,7 +495,8 @@ int MyData::open(const string & dir)
 		!jsSource.isMember("n") || 
 		!jsSource.isMember("Radius"))
 	{
-		return -1;
+		status = -8;
+		goto openErr;
 	}
 	int SourceKind = jsSource["SourceKind"].asInt();
 	int SourceType = jsSource["SourceType"].asInt();
@@ -484,48 +505,57 @@ int MyData::open(const string & dir)
 	int n = jsSource["n"].asInt();
 	double Radius = jsSource["Radius"].asDouble();
 
-	shared_ptr<calculation::SourceModeGeneration> tempSource = make_shared<calculation::SourceModeGeneration>();
-	tempSource->SetSource_Circular(SourceKind, SourceType, Rotation, m, n, frequency, Radius);
+	tempSource = make_shared<calculation::SourceModeGeneration>();
+	tempSource->SetSource_Circular(SourceKind, SourceType, Rotation, m, n, baseInfo["frequency"].asDouble(), Radius);
 
 	if (!tempSource->FieldCalculation_Circular())
 	{
-		return -1;
+		status = -9;
+		goto openErr;
 	}
+	tempData->setSource(tempSource);
 
 	// mirror
 	if (!js.isMember("numOfMirrors"))
 	{
-		return -1;
+		status = -10;
+		goto openErr;
 	}
-	numOfMirrors = js["numOfMirrors"].asInt();	
+	int numOfMirrors = js["numOfMirrors"].asInt();
+	tempData->setNumOfMirrors(numOfMirrors);
 
 	// 创建 mirror
-	vector<Mirror*> tempMirrors(numOfMirrors); // 创建一个临时mirror 如果打开失败 不影响原有mirror
+	Mirror * tmpMirror = nullptr;
 	for (int i = 0; i < numOfMirrors; i++)
 	{
-		if ((tempMirrors[i] = MirrorFactory::getMirrorByJson(js["Mirror"][i])) == nullptr)
+		if ((tmpMirror = MirrorFactory::getMirrorByJson(js["Mirror"][i])) == nullptr)
 		{
 			for (int j = 0; j < i; j++) // 创建失败 析构之前的mirror
 			{
-				delete tempMirrors[i];
-				tempMirrors[i] = nullptr;
+				delete tmpMirror;
+				tmpMirror = nullptr;
 			}
-			return -1;
+			status = -11;
+			goto openErr;
 		}
+		tempData->setMirror(i, tmpMirror);
+		tmpMirror = nullptr;
 	}
 
-	clear();
+	// switch
+	MyData * tempDataSwitch = _myData;
+	//lock             future for thread safe
+	_myData = tempData;
+	//unlock           future for thread safe
+	delete tempDataSwitch;
+	tempDataSwitch = nullptr;
 
+	return status;
 
-	// 替换
-	for (int i = 0; i < numOfMirrors; i++)
-	{
-		mirrors[i] = tempMirrors[i];
-		tempMirrors[i] = nullptr;
-	}
-	source = tempSource;
+openErr:
 
-	return 0;
+	delete tempData;
+	return status;
 }
 
 void MyData::clear()
