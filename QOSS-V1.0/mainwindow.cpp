@@ -519,7 +519,10 @@ void mainWindow::createTreeWidgetItem()
 		childMirror->setExpanded(true);
 		if (myData->getMirrorByNum(i)->getRestriction(0))
 		{
-			childMirror->addChild(myData->getMirrorByNum(i)->getRestriction(0)->getTree());
+			QTreeWidgetItem *childMirrorRes = myData->getMirrorByNum(i)->getRestriction(0)->getTree();
+			childMirrorRes->setData(2, Qt::UserRole, QVariant(i));
+			childMirrorRes->setData(3, Qt::UserRole, QVariant(1));
+			childMirror->addChild(childMirrorRes);
 		}
 	}
 

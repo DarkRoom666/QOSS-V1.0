@@ -8,8 +8,15 @@
 #include <vtkTextProperty.h>
 
 #include <vtkSTLWriter.h>
-
+#include "../Calculation/RayTracing.h"
+#include <vtkFloatArray.h>
+#include <vtkPoints.h>
+#include <vtkPointData.h>
+#include <vtkDelaunay2D.h>
+#include <vtkTransform.h>
+#include <vtkLine.h>
 Mirror::Mirror()
+	:restrictions(0)
 {
 	property = vtkSmartPointer<vtkProperty>::New();
 	property->SetOpacity(1);
@@ -128,6 +135,55 @@ void Mirror::moveRestriction(Mirror * ptr)
 	}
 	ptr->removeRestrictionAll();
 	updateData();
+}
+
+void Mirror::calcRestriction()
+{
+	calculation::RayTracing rayTracing(this);
+
+	//vtkSmartPointer<vtkLine> p1 = vtkSmartPointer<vtkLine>::New();
+	//vtkSmartPointer<vtkCellArray> pLineCell =
+	//	vtkSmartPointer<vtkCellArray>::New();
+	//int cout = 0;
+
+	for (int i = 0; i < restrictions.size(); i++)
+	{
+		vtkSmartPointer<vtkPoints> points =
+			vtkSmartPointer<vtkPoints>::New();
+		vector<Vector3> starPoint;
+		Vector3 toRay;
+		Vector3 rec;
+		Vector3 inter;
+		bool isFlag;
+		restrictions[i]->genRays(starPoint, toRay);
+		for (const auto & x : starPoint)
+		{
+			rayTracing.calcReflect(x, toRay, rec, inter, isFlag);
+			if (isFlag)
+			{
+				points->InsertNextPoint(inter.x, inter.y, inter.z);
+				//points->InsertNextPoint(x.x, x.y, x.z);
+				//points->InsertNextPoint(x.x + toRay.x, x.y + toRay.y, x.z + toRay.z);
+
+				//p1->GetPointIds()->SetId(0, cout++);
+				//p1->GetPointIds()->SetId(1, cout++);
+				//pLineCell->InsertNextCell(p1);
+
+			}
+		}
+		polyData = vtkSmartPointer<vtkPolyData>::New();
+		polyData->SetPoints(points);
+
+		//polyData = vtkSmartPointer<vtkPolyData>::New();
+		//polyData->SetPoints(points); //获得网格模型中的几何数据：点集  
+		//polyData->SetLines(pLineCell);
+
+		vtkSmartPointer<vtkDelaunay2D> delaunay =
+			vtkSmartPointer<vtkDelaunay2D>::New();
+		delaunay->SetInputData(polyData);
+		delaunay->Update();
+		polyData = delaunay->GetOutput();
+	}
 }
 
 void Mirror::switchIsTransparent()

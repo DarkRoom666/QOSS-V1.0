@@ -71,6 +71,8 @@ public:
 	void moveRestriction(Mirror*);
 	const vector<Restriction*>& getRestrictionAll() const { return restrictions; }
 
+	virtual void calcRestriction();
+
 	void switchIsTransparent();
 	bool getIsTransparent() const { return isTransparent; }
 
@@ -95,11 +97,13 @@ protected:
 
 	vtkSmartPointer<vtkAxesActor> actorAxes;
 
+	vector<Restriction*> restrictions;
+
 	bool isTransparent; // 是否透明
 	bool isShow; // 是否显示
 	vtkSmartPointer<vtkProperty> property;
 
-	vector<Restriction*> restrictions;
+
 
 
 private:

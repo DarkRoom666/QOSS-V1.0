@@ -46,6 +46,9 @@ public:
 
 	Json::Value getDataJson() const;
 
+	// 根据限制条件得到相应光线 type表示光线密度 0为显示密度
+	void genRays(vector<Vector3> &star, Vector3 &to, int type = 0);
+
 private:
 
 	//保存每个模型的显示和剖分数据

@@ -6,6 +6,9 @@
 #include <vtkTriangleFilter.h>
 #include <vtkPolyDataMapper.h>
 #include "util/comUtil.h"
+#include "../util/Constant_Var.h"
+#include "..\Calculation\Matrix4D.h"
+#include "..\Calculation\Vector3D.h"
 
 Restriction::Restriction()
 {
@@ -178,4 +181,63 @@ Json::Value Restriction::getDataJson() const
 	js["graphTrans"] = jsGraphTrans;
 
 	return js;
+}
+
+void Restriction::genRays(vector<Vector3>& star, Vector3& to, int type)
+{
+	// 按周长采样
+	star.clear();
+	int n = 51;
+	int m = 51;
+	switch (type)
+	{
+	case 0:
+	default:
+		break;
+	}
+	double gapR = data[0] / (n - 1);
+	double gapCyl = Pi / (m - 1);
+
+	Vector3D RotateAsix(graphTrans.getRotate_x(),
+		graphTrans.getRotate_y(),
+		graphTrans.getRotate_z());
+	Matrix4D R_rotatMatrix = Matrix4D::getRotateMatrix(
+		graphTrans.getRotate_theta(), RotateAsix);
+	Matrix4D R_translateMatrix = Matrix4D::getTranslateMatrix(
+		graphTrans.getTrans_x(),
+		graphTrans.getTrans_y(), graphTrans.getTrans_z());
+	Matrix4D R_Matrix = R_translateMatrix * R_rotatMatrix;
+
+	double x, y;
+	double startR = 0;
+	double startCyl = 0;
+	double eachGapCyl = 0;
+
+	Vector3 tempStar;
+
+	//startR += gapR * 50;
+	for (int i = 0; i < n; ++i)
+	{
+		if (startR < 0.0000001)
+		{
+			eachGapCyl = 2 * Pi;
+		}
+		else
+		{
+			eachGapCyl = data[0] / startR * gapCyl;
+		}
+		startCyl = 0;
+		while (startCyl < 2 * Pi)
+		{
+			x = cos(startCyl) * startR;
+			y = sin(startCyl) * startR;
+			tempStar = R_Matrix * Vector3(x, y, 0);
+			
+			star.push_back(tempStar);
+			startCyl += eachGapCyl;
+		}
+		startR += gapR;
+	}
+
+	to = R_rotatMatrix * Vector3(0, 0, 1);
 }

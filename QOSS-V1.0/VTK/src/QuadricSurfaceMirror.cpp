@@ -39,43 +39,48 @@ QuadricSurfaceMirror::~QuadricSurfaceMirror()
 
 void QuadricSurfaceMirror::calPolyData(double ds)
 {
-	double radius = 1;
-	double temp = -4 * 1; // data[7] 表示焦距
-	vtkSmartPointer<vtkQuadric>quadric = vtkSmartPointer<vtkQuadric>::New();
-	quadric->SetCoefficients(data[0], data[1], data[2], data[3], data[4], data[5], data[6], 
-		data[7], data[8], data[9]+1);
+	if (restrictions.empty())
+	{
+		double radius = 1;
+		double temp = -4 * 1; // data[7] 表示焦距
+		vtkSmartPointer<vtkQuadric>quadric = vtkSmartPointer<vtkQuadric>::New();
+		quadric->SetCoefficients(data[0], data[1], data[2], data[3], data[4], data[5], data[6],
+			data[7], data[8], data[9] + 1);
 
-	//二次函数采样分辨率
-	vtkSmartPointer<vtkSampleFunction>sample = vtkSmartPointer<vtkSampleFunction>::New();
-	if (ds == 0)
-		sample->SetSampleDimensions(60, 60, 30);
+		//二次函数采样分辨率
+		vtkSmartPointer<vtkSampleFunction>sample = vtkSmartPointer<vtkSampleFunction>::New();
+		if (ds == 0)
+			sample->SetSampleDimensions(60, 60, 30);
+		else
+			sample->SetSampleDimensions(int(radius / ds) * 2,
+				int(radius / ds) * 2, int(-temp / ds) * 2); // 采样点和ds有关
+		sample->SetImplicitFunction(quadric);
+		sample->SetModelBounds(data[10], data[11], data[12], data[13], data[14], data[15]);
+		vtkSmartPointer<vtkContourFilter> contourFilter = vtkSmartPointer<vtkContourFilter>::New();
+		contourFilter->SetInputConnection(sample->GetOutputPort());
+		contourFilter->GenerateValues(1, 1, 1);
+		contourFilter->Update();
+
+		polyData = contourFilter->GetOutput();
+		vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+
+		// 用户自定义平移旋转 (先移动后旋转)
+		transform->Translate(graphTrans.getTrans_x(),
+			graphTrans.getTrans_y(), graphTrans.getTrans_z());
+		transform->RotateWXYZ(graphTrans.getRotate_theta(), graphTrans.getRotate_x(),
+			graphTrans.getRotate_y(), graphTrans.getRotate_z());
+
+		vtkSmartPointer<vtkTransformPolyDataFilter> TransFilter =
+			vtkSmartPointer<vtkTransformPolyDataFilter>::New();
+		TransFilter->SetInputData(polyData);
+		TransFilter->SetTransform(transform); //use vtkTransform (or maybe vtkLinearTransform)
+		TransFilter->Update();
+		polyData = TransFilter->GetOutput();
+	}
 	else
-		sample->SetSampleDimensions(int(radius / ds) * 2,
-			int(radius / ds) * 2, int(-temp / ds) * 2); // 采样点和ds有关
-	sample->SetImplicitFunction(quadric);
-	sample->SetModelBounds(data[10], data[11], data[12], data[13], data[14], data[15]);
-	vtkSmartPointer<vtkContourFilter> contourFilter = vtkSmartPointer<vtkContourFilter>::New();
-	contourFilter->SetInputConnection(sample->GetOutputPort());
-	contourFilter->GenerateValues(1, 1, 1);
-	contourFilter->Update();
-
-	polyData = contourFilter->GetOutput();
-	vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-
-	// 用户自定义平移旋转 (先移动后旋转)
-	transform->Translate(graphTrans.getTrans_x(),
-		graphTrans.getTrans_y(), graphTrans.getTrans_z());
-	transform->RotateWXYZ(graphTrans.getRotate_theta(), graphTrans.getRotate_x(),
-		graphTrans.getRotate_y(), graphTrans.getRotate_z());
-
-	vtkSmartPointer<vtkTransformPolyDataFilter> TransFilter =
-		vtkSmartPointer<vtkTransformPolyDataFilter>::New();
-	TransFilter->SetInputData(polyData);
-	TransFilter->SetTransform(transform); //use vtkTransform (or maybe vtkLinearTransform)
-	TransFilter->Update();
-	polyData = TransFilter->GetOutput();
-
-	calcRestriction();
+	{
+		calcRestriction();
+	}
 }
 
 void QuadricSurfaceMirror::updateData()
@@ -158,7 +163,7 @@ Json::Value QuadricSurfaceMirror::getDataJson(const string& dir, int index) cons
 	return js;
 }
 
-void QuadricSurfaceMirror::calcRestriction()
+void QuadricSurfaceMirror::calcRestriction1()
 {
 	if (restrictions.empty())
 		return;

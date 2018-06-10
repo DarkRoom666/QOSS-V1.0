@@ -36,7 +36,7 @@ public:
 
 private:
 
-	void calcRestriction();
+	void calcRestriction1();
 
 };
 
