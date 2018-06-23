@@ -48,7 +48,7 @@ public:
 
 	// cal(计算) and get polyData 
 	vtkSmartPointer<vtkPolyData> getPolyData() const;
-	virtual void calPolyData(double ds = 0) = 0;
+	virtual void calPolyData(vtkSmartPointer<vtkPolyData>&, double ds = 0) = 0;
 
 	virtual void updateData() = 0;
 
@@ -71,7 +71,7 @@ public:
 	void moveRestriction(Mirror*);
 	const vector<Restriction*>& getRestrictionAll() const { return restrictions; }
 
-	virtual void calcRestriction();
+	virtual void calcRestriction(vtkSmartPointer<vtkPolyData>&);
 
 	void switchIsTransparent();
 	bool getIsTransparent() const { return isTransparent; }
@@ -87,6 +87,8 @@ public:
 
 	virtual Json::Value getDataJson(const string& dir, int index) const;
 
+	void genMesh(double ds);
+
 protected:
 
 	MirrorsType type;
@@ -101,6 +103,7 @@ protected:
 
 	bool isTransparent; // 是否透明
 	bool isShow; // 是否显示
+
 	vtkSmartPointer<vtkProperty> property;
 
 

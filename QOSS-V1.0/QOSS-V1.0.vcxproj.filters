@@ -461,6 +461,24 @@
     <ClCompile Include="util\comUtil.cpp">
       <Filter>Source Files\util</Filter>
     </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_MeshWidget.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_MeshWidget.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="Qt\src\MeshWidget.cpp">
+      <Filter>Source Files\Qt</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_MeshThread.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_MeshThread.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="Qt\src\MeshThread.cpp">
+      <Filter>Source Files\Qt</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="mainwindow.h">
@@ -558,6 +576,12 @@
     </CustomBuild>
     <CustomBuild Include="DenisovRadiator\showDenisov.h">
       <Filter>Header Files\Denisov</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Qt\include\MeshWidget.h">
+      <Filter>Header Files\Qt</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Qt\include\MeshThread.h">
+      <Filter>Header Files\Qt</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

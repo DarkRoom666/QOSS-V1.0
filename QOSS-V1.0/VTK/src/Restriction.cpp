@@ -222,20 +222,25 @@ Json::Value Restriction::getDataJson() const
 	return js;
 }
 
-void Restriction::genRays(vector<Vector3>& star, Vector3& to, int type)
+void Restriction::genRays(vector<Vector3>& star, Vector3& to, double ds)
 {
+	int n = 0;
+	int m = 0;
+	if (ds < 0.0) // 显示
+	{
+		n = 51;
+		m = 51;
+	}
+	else
+	{
+		m = n = int(data[0] / ds);
+	}
+	// 按周长采样
+	star.clear();
+	star.resize(n*m);
+
 	if (this->type == RES_CYLINDER)
 	{
-		// 按周长采样
-		star.clear();
-		int n = 51;
-		int m = 51;
-		switch (type)
-		{
-		case 0:
-		default:
-			break;
-		}
 		double gapR = data[0] / (n - 1);
 		double gapCyl = Pi / (m - 1);
 
@@ -284,16 +289,7 @@ void Restriction::genRays(vector<Vector3>& star, Vector3& to, int type)
 	}
 	else if (this->type == RES_CUBE)
 	{
-		// 按周长采样
-		star.clear();
-		int n = 51;
-		int m = 51;
-		switch (type)
-		{
-		case 0:
-		default:
-			break;
-		}
+
 		double gapN = data[0] / (n - 1);
 		//double gapM = data[0] / (m - 1);
 

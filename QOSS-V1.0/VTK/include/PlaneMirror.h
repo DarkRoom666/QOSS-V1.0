@@ -21,7 +21,7 @@ public:
 	PlaneMirror(const GraphTrans & _graphTrans, const std::vector<double> parameter);
 	virtual ~PlaneMirror();
 
-	virtual void calPolyData(double ds = 0);
+	virtual void calPolyData(vtkSmartPointer<vtkPolyData>&, double ds = 0);
 
 	virtual void updateData();
 

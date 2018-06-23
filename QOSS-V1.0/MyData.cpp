@@ -583,3 +583,14 @@ void MyData::clear()
 	isNeedCalcPhsCorFlag = true;
 }
 
+void MyData::mesh(double ds)
+{
+	for (auto & x : mirrors)
+	{
+		if (x)
+		{
+			x->genMesh(ds);
+		}
+	}
+}
+

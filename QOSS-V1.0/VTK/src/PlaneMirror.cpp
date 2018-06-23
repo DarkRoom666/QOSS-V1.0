@@ -28,7 +28,7 @@ PlaneMirror::~PlaneMirror()
 {
 }
 
-void PlaneMirror::calPolyData(double ds)
+void PlaneMirror::calPolyData(vtkSmartPointer<vtkPolyData>& ptr, double ds)
 {
 	float w = data[0] / 2.0;
 	float d = data[1] / 2.0;
@@ -39,7 +39,7 @@ void PlaneMirror::calPolyData(double ds)
 	plane->SetPoint2(-w, d, 0);
 	plane->Update();
 
-	polyData = plane->GetOutput();
+	ptr = plane->GetOutput();
 	vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
 
 	// 用户自定义平移旋转 (先移动后旋转)
@@ -50,21 +50,20 @@ void PlaneMirror::calPolyData(double ds)
 
 	vtkSmartPointer<vtkTransformPolyDataFilter> TransFilter =
 		vtkSmartPointer<vtkTransformPolyDataFilter>::New();
-	TransFilter->SetInputData(polyData);
+	TransFilter->SetInputData(ptr);
 	TransFilter->SetTransform(transform); //use vtkTransform (or maybe vtkLinearTransform)
 	TransFilter->Update();
-	polyData = TransFilter->GetOutput();
+	ptr = TransFilter->GetOutput();
 	vtkSmartPointer<vtkTriangleFilter> triangleFilter =
 		vtkSmartPointer<vtkTriangleFilter>::New();
-	triangleFilter->SetInputData(polyData);
+	triangleFilter->SetInputData(ptr);
 	//triangleFilter->SetTransform(transform); //use vtkTransform (or maybe vtkLinearTransform)
 	triangleFilter->Update();
-	polyData = triangleFilter->GetOutput();
+	ptr = triangleFilter->GetOutput();
 }
 
 void PlaneMirror::updateData()
 {
-	calPolyData();
 	calcActorAxes();
 	calActor();
 }

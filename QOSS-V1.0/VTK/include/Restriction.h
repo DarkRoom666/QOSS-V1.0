@@ -52,8 +52,8 @@ public:
 
 	Json::Value getDataJson() const;
 
-	// 根据限制条件得到相应光线 type表示光线密度 0为显示密度
-	void genRays(vector<Vector3> &star, Vector3 &to, int type = 0);
+	// 根据限制条件得到相应光线 ds表示光线密度 负数为显示密度
+	void genRays(vector<Vector3> &star, Vector3 &to, double ds = -1);
 
 	void setType(RestrictionType _type);
 	RestrictionType getType() { return type; }
