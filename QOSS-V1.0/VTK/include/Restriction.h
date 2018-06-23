@@ -20,7 +20,13 @@
 class Restriction : public BasicParameters
 {
 public:
-	Restriction(); // 给继承用
+	enum RestrictionType
+	{
+		RES_CYLINDER = 0,
+		RES_CUBE
+	};
+
+	Restriction(RestrictionType _type = RES_CYLINDER);
 	Restriction(const Restriction&); // 给继承用
 
 	// 构造默认的平面镜 没有传入参数
@@ -49,7 +55,12 @@ public:
 	// 根据限制条件得到相应光线 type表示光线密度 0为显示密度
 	void genRays(vector<Vector3> &star, Vector3 &to, int type = 0);
 
+	void setType(RestrictionType _type);
+	RestrictionType getType() { return type; }
+
 private:
+
+	RestrictionType type;
 
 	//保存每个模型的显示和剖分数据
 	vtkSmartPointer<vtkActor> actor;

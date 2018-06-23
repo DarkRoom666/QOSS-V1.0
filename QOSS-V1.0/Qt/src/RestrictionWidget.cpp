@@ -14,6 +14,14 @@ RestrictionWidget::RestrictionWidget(QWidget *parent)
 	baseGroupBox = new QGroupBox;
 	addBaseGroupBox(baseGroupBox);
 
+	typeLabel = new QLabel(tr("Type"));
+
+	typeComboBox = new QComboBox;
+	typeComboBox->addItem(tr("cylinder"));
+	typeComboBox->addItem(tr("cube"));
+
+	connect(typeComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(on_typeComboBox(int)));
+
 	//dimGroupBox
 	radiuslabel = new QLabel(tr("Radius(R)"));
 	depthlabel = new QLabel(tr("Depth(D)"));
@@ -25,15 +33,16 @@ RestrictionWidget::RestrictionWidget(QWidget *parent)
 	depthLineEidt->setText(tr("0.5"));
 
 	QGridLayout * layout3 = new QGridLayout;
-	layout3->addWidget(radiuslabel, 0, 0);
-	layout3->addWidget(depthlabel, 1, 0);
-	layout3->addWidget(radiusLineEidt, 0, 1);
-	layout3->addWidget(depthLineEidt, 1, 1);
+	layout3->addWidget(typeLabel, 0, 0);
+	layout3->addWidget(typeComboBox, 0, 1);
+	layout3->addWidget(radiuslabel, 1, 0);
+	layout3->addWidget(depthlabel, 2, 0);
+	layout3->addWidget(radiusLineEidt, 1, 1);
+	layout3->addWidget(depthLineEidt, 2, 1);
 
 	dimGroupBox = new QGroupBox;
 	dimGroupBox->setTitle(tr("Dimensions"));
 	dimGroupBox->setLayout(layout3);
-
 
 	//tabLayout1
 	QVBoxLayout * tabLayout1; // page1
@@ -125,6 +134,23 @@ void RestrictionWidget::on_focusChange(QString var)
 	}
 	restriction->setDataByNum(1, res);
 	depthLineEidt->setStyleSheet("background-color:rgba(255,255,255,255)");
+	emit sendData(2);
+}
+
+void userInterface::RestrictionWidget::on_typeComboBox(int index)
+{
+	if (index == 0)
+	{
+		radiuslabel->setText(tr("Radius(R)"));
+		depthlabel->setText(tr("Depth(D)"));
+		restriction->setType(Restriction::RES_CYLINDER);
+	}
+	else
+	{
+		radiuslabel->setText(tr("Length(L)"));
+		depthlabel->setText(tr("Depth(D)"));
+		restriction->setType(Restriction::RES_CUBE);
+	}
 	emit sendData(2);
 }
 
