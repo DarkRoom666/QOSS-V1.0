@@ -1,7 +1,6 @@
 #include "..\include\Restriction.h"
 
 #include <vtkCylinderSource.h>
-#include <vtkCubeSource.h>
 #include <vtkTransform.h>
 #include <vtkTransformPolyDataFilter.h>
 #include <vtkTriangleFilter.h>
@@ -11,9 +10,8 @@
 #include "..\Calculation\Matrix4D.h"
 #include "..\Calculation\Vector3D.h"
 
-Restriction::Restriction(RestrictionType _type)
+Restriction::Restriction()
 {
-	type = _type;
 	property = vtkSmartPointer<vtkProperty>::New();
 	property->SetOpacity(0.2);
 	property->SetColor(1, 0, 0);
@@ -38,7 +36,6 @@ Restriction::Restriction(const Restriction & right)
 	data[2] = right.data[2];
 	data[3] = right.data[3];
 	graphTrans = right.graphTrans;
-	type = right.type;
 	updateData();
 }
 
@@ -77,71 +74,35 @@ Restriction::~Restriction()
 
 void Restriction::calPolyData(double ds)
 {
-	if (type == RES_CUBE)
-	{
-		float x = data[0];
-		float z = data[1];
+	float r = data[0];
+	float h = data[1];
+	vtkSmartPointer<vtkCylinderSource> cylinder = vtkSmartPointer<vtkCylinderSource>::New();
+	cylinder->SetHeight(h);
+	cylinder->SetRadius(r);
+	cylinder->SetCenter(0, h / 2, 0);
+	cylinder->SetResolution(40);
+	cylinder->Update();
 
-		vtkSmartPointer<vtkCubeSource> cube = vtkSmartPointer<vtkCubeSource>::New();
-		cube->SetXLength(x);
-		cube->SetYLength(x);
-		cube->SetZLength(z);
-		cube->Update();
+	polyData = cylinder->GetOutput();
+	vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+	// 用户自定义平移旋转 (先移动后旋转)
+	transform->Translate(graphTrans.getTrans_x(),
+		graphTrans.getTrans_y(), graphTrans.getTrans_z());
+	transform->RotateWXYZ(graphTrans.getRotate_theta(), graphTrans.getRotate_x(),
+		graphTrans.getRotate_y(), graphTrans.getRotate_z());
+	transform->RotateWXYZ(90, 1, 0, 0);
+	vtkSmartPointer<vtkTransformPolyDataFilter> TransFilter =
+		vtkSmartPointer<vtkTransformPolyDataFilter>::New();
+	TransFilter->SetInputData(polyData);
+	TransFilter->SetTransform(transform); //use vtkTransform (or maybe vtkLinearTransform)
+	TransFilter->Update();
+	polyData = TransFilter->GetOutput();
 
-		polyData = cube->GetOutput();
-		vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-		// 用户自定义平移旋转 (先移动后旋转)
-		transform->Translate(graphTrans.getTrans_x(),
-			graphTrans.getTrans_y(), graphTrans.getTrans_z());
-		transform->RotateWXYZ(graphTrans.getRotate_theta(), graphTrans.getRotate_x(),
-			graphTrans.getRotate_y(), graphTrans.getRotate_z());
-		transform->Translate(0, 0, z / 2);
-		vtkSmartPointer<vtkTransformPolyDataFilter> TransFilter =
-			vtkSmartPointer<vtkTransformPolyDataFilter>::New();
-		TransFilter->SetInputData(polyData);
-		TransFilter->SetTransform(transform); //use vtkTransform (or maybe vtkLinearTransform)
-		TransFilter->Update();
-		polyData = TransFilter->GetOutput();
-
-		vtkSmartPointer<vtkTriangleFilter> triangleFilter =
-			vtkSmartPointer<vtkTriangleFilter>::New();
-		triangleFilter->SetInputData(polyData);
-		triangleFilter->Update();
-		polyData = triangleFilter->GetOutput();
-	}
-	else if (type == RES_CYLINDER)
-	{
-		float r = data[0];
-		float h = data[1];
-		vtkSmartPointer<vtkCylinderSource> cylinder = vtkSmartPointer<vtkCylinderSource>::New();
-		cylinder->SetHeight(h);
-		cylinder->SetRadius(r);
-		cylinder->SetCenter(0, h / 2, 0);
-		cylinder->SetResolution(40);
-		cylinder->Update();
-
-		polyData = cylinder->GetOutput();
-		vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-		// 用户自定义平移旋转 (先移动后旋转)
-		transform->Translate(graphTrans.getTrans_x(),
-			graphTrans.getTrans_y(), graphTrans.getTrans_z());
-		transform->RotateWXYZ(graphTrans.getRotate_theta(), graphTrans.getRotate_x(),
-			graphTrans.getRotate_y(), graphTrans.getRotate_z());
-		transform->RotateWXYZ(90, 1, 0, 0);
-		vtkSmartPointer<vtkTransformPolyDataFilter> TransFilter =
-			vtkSmartPointer<vtkTransformPolyDataFilter>::New();
-		TransFilter->SetInputData(polyData);
-		TransFilter->SetTransform(transform); //use vtkTransform (or maybe vtkLinearTransform)
-		TransFilter->Update();
-		polyData = TransFilter->GetOutput();
-
-		vtkSmartPointer<vtkTriangleFilter> triangleFilter =
-			vtkSmartPointer<vtkTriangleFilter>::New();
-		triangleFilter->SetInputData(polyData);
-		triangleFilter->Update();
-		polyData = triangleFilter->GetOutput();
-	}
-	
+	vtkSmartPointer<vtkTriangleFilter> triangleFilter =
+		vtkSmartPointer<vtkTriangleFilter>::New();
+	triangleFilter->SetInputData(polyData);
+	triangleFilter->Update();
+	polyData = triangleFilter->GetOutput();
 }
 
 vtkSmartPointer<vtkPolyData> Restriction::getPolyData() const
@@ -222,109 +183,61 @@ Json::Value Restriction::getDataJson() const
 	return js;
 }
 
-void Restriction::genRays(vector<Vector3>& star, Vector3& to, double ds)
+void Restriction::genRays(vector<Vector3>& star, Vector3& to, int type)
 {
-	int n = 0;
-	int m = 0;
-	if (ds < 0.0) // 显示
-	{
-		n = 51;
-		m = 51;
-	}
-	else
-	{
-		m = n = int(data[0] / ds);
-	}
 	// 按周长采样
 	star.clear();
-	star.resize(n*m);
-
-	if (this->type == RES_CYLINDER)
+	int n = 51;
+	int m = 51;
+	switch (type)
 	{
-		double gapR = data[0] / (n - 1);
-		double gapCyl = Pi / (m - 1);
+	case 0:
+	default:
+		break;
+	}
+	double gapR = data[0] / (n - 1);
+	double gapCyl = Pi / (m - 1);
 
-		Vector3D RotateAsix(graphTrans.getRotate_x(),
-			graphTrans.getRotate_y(),
-			graphTrans.getRotate_z());
-		Matrix4D R_rotatMatrix = Matrix4D::getRotateMatrix(
-			graphTrans.getRotate_theta(), RotateAsix);
-		Matrix4D R_translateMatrix = Matrix4D::getTranslateMatrix(
-			graphTrans.getTrans_x(),
-			graphTrans.getTrans_y(), graphTrans.getTrans_z());
-		Matrix4D R_Matrix = R_translateMatrix * R_rotatMatrix;
+	Vector3D RotateAsix(graphTrans.getRotate_x(),
+		graphTrans.getRotate_y(),
+		graphTrans.getRotate_z());
+	Matrix4D R_rotatMatrix = Matrix4D::getRotateMatrix(
+		graphTrans.getRotate_theta(), RotateAsix);
+	Matrix4D R_translateMatrix = Matrix4D::getTranslateMatrix(
+		graphTrans.getTrans_x(),
+		graphTrans.getTrans_y(), graphTrans.getTrans_z());
+	Matrix4D R_Matrix = R_translateMatrix * R_rotatMatrix;
 
-		double x, y;
-		double startR = 0;
-		double startCyl = 0;
-		double eachGapCyl = 0;
+	double x, y;
+	double startR = 0;
+	double startCyl = 0;
+	double eachGapCyl = 0;
 
-		Vector3 tempStar;
+	Vector3 tempStar;
 
-		//startR += gapR * 50;
-		for (int i = 0; i < n; ++i)
+	//startR += gapR * 50;
+	for (int i = 0; i < n; ++i)
+	{
+		if (startR < 0.0000001)
 		{
-			if (startR < 0.0000001)
-			{
-				eachGapCyl = 2 * Pi;
-			}
-			else
-			{
-				eachGapCyl = data[0] / startR * gapCyl;
-			}
-			startCyl = 0;
-			while (startCyl < 2 * Pi)
-			{
-				x = cos(startCyl) * startR;
-				y = sin(startCyl) * startR;
-				tempStar = R_Matrix * Vector3(x, y, 0);
-
-				star.push_back(tempStar);
-				startCyl += eachGapCyl;
-			}
-			startR += gapR;
+			eachGapCyl = 2 * Pi;
 		}
-
-		to = R_rotatMatrix * Vector3(0, 0, 1);
+		else
+		{
+			eachGapCyl = data[0] / startR * gapCyl;
+		}
+		startCyl = 0;
+		while (startCyl < 2 * Pi)
+		{
+			x = cos(startCyl) * startR;
+			y = sin(startCyl) * startR;
+			tempStar = R_Matrix * Vector3(x, y, 0);
+			
+			star.push_back(tempStar);
+			startCyl += eachGapCyl;
+		}
+		startR += gapR;
 	}
-	else if (this->type == RES_CUBE)
-	{
 
-		double gapN = data[0] / (n - 1);
-		//double gapM = data[0] / (m - 1);
-
-		Vector3D RotateAsix(graphTrans.getRotate_x(),
-			graphTrans.getRotate_y(),
-			graphTrans.getRotate_z());
-		Matrix4D R_rotatMatrix = Matrix4D::getRotateMatrix(
-			graphTrans.getRotate_theta(), RotateAsix);
-		Matrix4D R_translateMatrix = Matrix4D::getTranslateMatrix(
-			graphTrans.getTrans_x(),
-			graphTrans.getTrans_y(), graphTrans.getTrans_z());
-		Matrix4D R_Matrix = R_translateMatrix * R_rotatMatrix;
-
-		double x, y;
-		double startR = 0;
-		double startCyl = 0;
-		double eachGapCyl = 0;
-
-		Vector3 tempStar;
-
-		for(int i = 0; i < n; i++)
-			for (int j = 0; j < n; j++)
-			{
-				x = -data[0] / 2 + i * gapN;
-				y = -data[0] / 2 + j * gapN;
-				tempStar = R_Matrix * Vector3(x, y, 0);
-
-				star.push_back(tempStar);
-			}
-		to = R_rotatMatrix * Vector3(0, 0, 1);
-	}
-}
-
-void Restriction::setType(RestrictionType _type)
-{
-	type = _type;
-	updateData();
+	to = R_rotatMatrix * Vector3(0, 0, 1);
 }

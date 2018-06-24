@@ -6,7 +6,6 @@
 #include "Qt/include/PhsCorrectionDialog.h"
 #include "Qt/include/CalculatePhsCorThread.h"
 #include "Qt/include/CalculatePVVAThread.h"
-#include "Qt/include/MeshWidget.h"
 
 #include "VTK/include/Mirror.h"
 #include "VTK/include/Restriction.h"
@@ -284,7 +283,6 @@ void mainWindow::init()
 	radiatorField = nullptr;
 	PVVAprogressDialog = nullptr;
 	phsCorprogressDialog = nullptr;
-	isMeshFlag = false;
 }
 
 void mainWindow::createActions()
@@ -362,14 +360,6 @@ void mainWindow::createActions()
 	PhaseAction->setStatusTip(tr("Phase Correction"));
 	//PhaseAction->setEnabled(false);
 	connect(PhaseAction, SIGNAL(triggered()), this, SLOT(on_PhaseCor()));
-
-	MeshAction = new QAction(QIcon(tr("Qt/images/Mesh.png")), tr("Mesh"), this);
-	MeshAction->setStatusTip(tr("Mesh"));
-	connect(MeshAction, SIGNAL(triggered()), this, SLOT(on_Mesh()));
-
-	POAction = new QAction(QIcon(tr("Qt/images/PO.png")), tr("Physical Optics"), this);
-	POAction->setStatusTip(tr("Physical Optics"));
-	connect(POAction, SIGNAL(triggered()), this, SLOT(on_PO()));
 }
 
 void mainWindow::createMenus()
@@ -396,12 +386,10 @@ void mainWindow::createMenus()
 	SourceMenu->addAction(ApertureFieldAction);
 	SourceMenu->addAction(FDTDAction);
 	SourceMenu->addAction(loadFDTDAction);
-	SourceMenu->addAction(MeshAction);
 
 	CalMenu = this->menuBar()->addMenu(tr("simulation"));
 	CalMenu->addAction(PVVAAction);
 	CalMenu->addAction(PhaseAction);
-	CalMenu->addAction(POAction);
 }
 
 void mainWindow::createToolBars()
@@ -425,8 +413,6 @@ void mainWindow::createToolBars()
 	fileTool->addSeparator();
 	fileTool->addAction(PVVAAction);
 	fileTool->addAction(PhaseAction);
-	fileTool->addAction(MeshAction);
-	fileTool->addAction(POAction);
 }
 
 void mainWindow::createStatusBar()
@@ -1893,25 +1879,6 @@ void mainWindow::on_DenisovParameters()
 	//showDenisovPtr = new showDenisov; 
 	//showDenisovPtr->show();
 	//showDenisovPtr->setWindowFlags(Qt::WindowStaysOnTopHint); // 子窗口保持置顶
-}
-
-void mainWindow::on_Mesh()
-{
-	MeshWidget meshWidget;
-	if (meshWidget.exec() != QDialog::Accepted)
-	{
-		return;
-	}
-
-	//myData->mesh(ds);
-}
-
-void mainWindow::on_PO()
-{
-	if (!isMeshFlag)
-	{
-		return;
-	}
 }
 
 void mainWindow::on_treeWidget_ContextMenuRequested(QPoint pos)

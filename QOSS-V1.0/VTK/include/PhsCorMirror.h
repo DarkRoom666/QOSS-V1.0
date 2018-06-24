@@ -22,7 +22,7 @@ public:
 
 	virtual ~PhsCorMirror();
 
-	virtual void calPolyData(vtkSmartPointer<vtkPolyData>&, double ds = 0);
+	virtual void calPolyData(double ds = 0);
 
 	virtual void updateData();
 

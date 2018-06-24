@@ -13,7 +13,6 @@
 #include <Qlabel>
 #include <QLineEdit>
 #include <QPushButton>
-#include <QComboBox>
 
 #include "Qt/include/GraphTransWidget.h"
 #include "../VTK/include/Restriction.h"
@@ -32,7 +31,6 @@ namespace  userInterface {
 	private slots:
 		void on_radiusChange(QString);
 		void on_focusChange(QString);
-		void on_typeComboBox(int index);
 
 	private:
 		//page1
@@ -49,9 +47,6 @@ namespace  userInterface {
 
 		QLabel * label;
 		QLineEdit * nameLineEidt;
-
-		QLabel * typeLabel;
-		QComboBox * typeComboBox;
 
 		Restriction * restriction;
 	};

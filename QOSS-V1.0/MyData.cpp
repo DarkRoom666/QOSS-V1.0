@@ -108,7 +108,7 @@ void MyData::createModelMirror()
 		mirror3Position.updateTranslate(Vector3(0.02, 0, 0.4993));
 		mirror3Position.updateRotate(Vector3(0, 1, 0), -17.23-180);
 		//mirrors[2] = MirrorFactory::getMirror(ELLIPSOID, position[2]);
-		Restriction * restriction = new Restriction(Restriction::RES_CUBE);
+		Restriction * restriction = new Restriction;
 		restriction->setDataByNum(0, 0.075);
 		restriction->setDataByNum(1, 0.5);
 		GraphTrans restrictionPosition;
@@ -588,16 +588,5 @@ void MyData::clear()
 	fieldMap.clear();
 	isModifiedFlag = true;
 	isNeedCalcPhsCorFlag = true;
-}
-
-void MyData::mesh(double ds)
-{
-	for (auto & x : mirrors)
-	{
-		if (x)
-		{
-			x->genMesh(ds);
-		}
-	}
 }
 

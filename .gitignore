@@ -240,5 +240,3 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
-/CUDADLL/libfftw3-3.dll
-/CUDADLL/libfftw3-3.lib

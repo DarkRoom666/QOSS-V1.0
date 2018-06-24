@@ -13,9 +13,21 @@ FDTDRadiator::FDTDRadiator() {
 	FDTDRadiator::returnFloat = NULL;
 	FDTDRadiator::user = NULL;
 	FDTDRadiator::FILENAME = NULL;//20180320
+
+	Ex_Port = NULL;
+	Ey_Port = NULL;
+	Hx_Port = NULL;
+	Hy_Port = NULL;
+
+	Eps = NULL;
 }
 FDTDRadiator::~FDTDRadiator() {
+	Free_2D(Ex_Port);	Ex_Port = NULL;
+	Free_2D(Ey_Port);	Ey_Port = NULL;
+	Free_2D(Hx_Port);	Hx_Port = NULL;
+	Free_2D(Hy_Port);	Hy_Port = NULL;
 
+	Free_3D(Eps, Nz_model); Eps = NULL;
 }
 
 void FDTDRadiator::SetInt(int input) 
@@ -146,9 +158,6 @@ void FDTDRadiator::LoadProFieldH(const char* _filename, vector<vector<complex<do
 	fclose(Binread);
 }
 
-
-
-
 void FDTDRadiator::SelectDT(float _dx, float _dy, float _dz){
 	
 	FDTDRadiator::NN = 5;
@@ -165,7 +174,6 @@ void FDTDRadiator::SelectDT(float _dx, float _dy, float _dz){
 
 }
 
-
 void FDTDRadiator::SetUpLowOrderVlasovRadiator(int _WG_m, int _WG_n, double _Frequency, double _Radius, double _F, int _Ns, int _OmpNum) {
 	//Set I Load Paras
 	FDTDRadiator::WG_m = _WG_m;
@@ -177,6 +185,8 @@ void FDTDRadiator::SetUpLowOrderVlasovRadiator(int _WG_m, int _WG_n, double _Fre
 	FDTDRadiator::SourceKind = 1;//低阶模式
 	FDTDRadiator::SourceType = 1;//TE模式
 	FDTDRadiator::Ns = _Ns;
+	FDTDRadiator::Nx_exc = _Ns;
+	FDTDRadiator::Ny_exc = _Ns;
 	FDTDRadiator::OmpNum = _OmpNum;
 	//logfile.open("./FDTDRadiator.log", ios::out);
 }
@@ -260,23 +270,149 @@ void FDTDRadiator::WriteApertureDataToFile(const char* _filename) {
 	fclose(Binwrite);
 }
 
+//读取端口激励场分布
+void FDTDRadiator::SetUpExcRadiator(string _filename) {
+	//读文件
+	fstream file;
+	file.open(_filename, ios::in);
+	string temp;
+	getline(file, temp);
+	istringstream tempLine(temp);
+	double tx, ty, tz, rx, ry, rz, rth;
+	tempLine >> tx >> ty >> tz >> rx >> ry >> rz >> rth;
+	double ds;
+	tempLine >> Nx_exc >> Ny_exc >> ds >> ds;
+	//注意，大软件的面文件顺序是先Nx 再Ny, 而FDTD计算中是先Ny再Nx，在此进行转换
+	Ex_Port = Allocate_2D(Ex_Port, Ny_exc, Nx_exc);
+	Ey_Port = Allocate_2D(Ey_Port, Ny_exc, Nx_exc);
+	Hx_Port = Allocate_2D(Hx_Port, Ny_exc, Nx_exc);
+	Hy_Port = Allocate_2D(Hy_Port, Ny_exc, Nx_exc);
+	//挨行读场分布
+	float exa, exd, eya, eyd, hxa, hxd, hya, hyd;
+	for (int i = 0; i < Nx_exc; i++) {
+		for (int j = 0; j < Ny_exc; j++) {
+			
+			getline(file, temp);
+			istringstream perline(temp);
+			perline >> exa >> exd >> eya >> eyd >> hxa >> hxd >> hya >> hyd;
+
+			Ex_Port[j][i] = complex<float>(exa*cos(exd*PIf / 180.0), exa*sin(exd*PIf / 180.0));
+			Ey_Port[j][i] = complex<float>(eya*cos(eyd*PIf / 180.0), eya*sin(eyd*PIf / 180.0));
+			Hx_Port[j][i] = complex<float>(hxa*cos(hxd*PIf / 180.0), hxa*sin(hxd*PIf / 180.0));
+			Hy_Port[j][i] = complex<float>(hya*cos(hyd*PIf / 180.0), hya*sin(hyd*PIf / 180.0));
+		}
+	}
+	file.close();
+}
+//读取模型分布
+void FDTDRadiator::SetUpModelRadiator(string _filename) {
+	FILE* modelin;
+	modelin = fopen(_filename.c_str(), "rb");
+	int readi; float readf;
+	if (Eps != NULL) {
+		Free_3D(Eps, Nz_model);
+	}
+
+	fread(&readi, sizeof(int), 1, modelin);	FDTDRadiator::Nx_model = readi;
+	fread(&readi, sizeof(int), 1, modelin);	FDTDRadiator::Ny_model = readi;
+	fread(&readi, sizeof(int), 1, modelin);	FDTDRadiator::Nz_model = readi;
+
+	FDTDRadiator::Eps = Allocate_3D(Eps, Nz_model, Ny_model, Nx_model);
+
+	fread(&readi, sizeof(int), 1, modelin); FDTDRadiator::Shiftx = readi;
+	fread(&readi, sizeof(int), 1, modelin); FDTDRadiator::Shifty = readi;
+
+	fread(&readf, sizeof(float), 1, modelin); FDTDRadiator::dx = readf;
+	fread(&readf, sizeof(float), 1, modelin); FDTDRadiator::dy = readf;
+	fread(&readf, sizeof(float), 1, modelin); FDTDRadiator::dz = readf;
+
+	fread(&readf, sizeof(float), 1, modelin); FDTDRadiator::cx = readf;
+	fread(&readf, sizeof(float), 1, modelin); FDTDRadiator::cy = readf;
+	fread(&readf, sizeof(float), 1, modelin); FDTDRadiator::cz = readf;
+
+	for (int k = 0; k < Nz_model; k++) {
+		for (int j = 0; j < Ny_model; j++) {
+			for (int i = 0; i < Nx_model; i++) {
+				fread(&readf,sizeof(float),1,modelin);
+				Eps[k][j][i] = readf;
+			}
+		}
+	}
+	fclose(modelin);
+}
+
+void FDTDRadiator::SetUpCommonFDTD(double _freq, double _ompNum, int _N_spa, int _timemode, int _huygensmode) {
+	Frequency = _freq;
+	OmpNum = _ompNum;
+	N_spa = _N_spa;
+	timemode = _timemode;
+	huygensmode = _huygensmode;
+}
+
+void FDTDRadiator::runCommonFDTD(void) {
+	fstream logfile;
+	logfile.open("./FDTDRadiator.log", ios::out);
+	logfile << "***This is the log file for Common FDTD Radiator Running.***" << endl;
+	if (returnInt)
+	{
+		returnInt(0, user);
+	}
+	CFDTD FDTD;
+	FDTD.SetLogfile(&logfile);
+	FDTD.SetReturnFloat(FDTDRadiator::returnFloat, FDTDRadiator::user);
+	logfile << "   Model Domain Size, Nx: " << Nx_model << ", Ny: " << Ny_model << ", Nz: " << Nz_model << endl;
+	logfile << "   Leads to " << Nx_model*Ny_model*Nz_model / 1.0e6 << " Mcells" << endl;
+	if (FDTDRadiator::timemode == 0) {//点频形式
+		SelectDT(dx, dy, dz);
+		logfile << "  Discrete interval in X: " << dx << "m, in Y: " << dy << "m, in Z: " << dz << "m." << endl;
+		logfile << "  Discrete interval in lambda, X: " << dx*FDTDRadiator::Frequency / C_Speedf << ", Y: " << dy*FDTDRadiator::Frequency / C_Speedf << ", Z: " << dz*FDTDRadiator::Frequency / C_Speedf << "." << endl;
+		logfile << "  Required max dt: " << FDTDRadiator::Requireddt << ", Used dt: " << FDTDRadiator::cdt << ", T contains" << 1.0 / FDTDRadiator::cdt / FDTDRadiator::Frequency << "dt. Ref:" << FDTDRadiator::NN * 4 << endl;
+		
+		//初始化
+		FDTD.Initial(OmpNum, NN, Nx_model, Ny_model, Nz_model, N_spa, 8, cdt, dx, dy, dz, Frequency);
+		//申请内存
+		FDTD.MemoryAllocate(timemode, 1, 0);
+		//导入模型
+		FDTD.SetupModel(Eps,cx,cy,cz);
+		//设置激励
+		FDTD.SetExcPort(N_spa, Nx_exc, Ny_exc, Shiftx+N_spa, Shifty+N_spa, Ex_Port, Ey_Port, Hx_Port, Hy_Port);
+		if (returnInt)
+		{
+			returnInt(1, user);//开始FDTD 计算
+		}
+		FDTD.Update();
+		if (returnInt)
+		{
+			returnInt(2, user);//完成FDTD 计算
+		}
+
+	}
+	logfile.close();
+}
 
 void FDTDRadiator::run() {
 	//低阶TE模式
 	fstream logfile;
 	logfile.open("./FDTDRadiator.log", ios::out);
 	logfile << "***This is the log file for FDTD Radiator Running.***" << endl;
-	//这个数据是为了为FDTD提供输入的场分布
-	complex<float>** Ex_Port;	Ex_Port = NULL;
-	complex<float>** Ey_Port;	Ey_Port = NULL;
-	complex<float>** Hx_Port;	Hx_Port = NULL;
-	complex<float>** Hy_Port;	Hy_Port = NULL;
+
 	if (returnInt) // 如果没有注册则不回调
 	{
 		returnInt(0, user);
 	}
 
-	//准备发射端口的场分布
+	//不同的频点-高阶模的交散半径不一样 最好逐点频计算
+	//不同的频点-低阶模的变化要小一些 可以带宽计算
+	CFDTD FDTD;
+	FDTD.SetLogfile(&logfile);			//设置logfile
+	FDTD.SetReturnFloat(FDTDRadiator::returnFloat, FDTDRadiator::user);	//设置回调函数
+	ApertureRadiation HuygensPro;
+	HuygensPro.SetLogfile(&logfile);	//设置logfile
+	HuygensPro.SetReturnFloat(FDTDRadiator::returnFloat, FDTDRadiator::user);	//设置回调函数
+	Position3D SourceCenter;
+
+
+	//低阶辐射器运行过程
 	if (SourceKind == 1 && SourceType == 1) {
 		//Part I Set Port Paras
 		SourceModeGenerationT Port;
@@ -335,87 +471,81 @@ void FDTDRadiator::run() {
 
 		Port.~SourceModeGenerationT();
 
-	}
-	//Part II Setup Model
-	
-	//建立辐射器的剖分
-	//SetUp Radiator Mesh
-	CRadiator Radiator(FDTDRadiator::SourceKind, FDTDRadiator::SourceType,0, FDTDRadiator::WG_m, FDTDRadiator::WG_n, FDTDRadiator::Ns, FDTDRadiator::Ns,C_Speedf/float(Frequency),float(FDTDRadiator::Radius), FDTDRadiator::Lc, FDTDRadiator::Lp,0,0,0,0,0,0);
-	Radiator.SetLogfile(&logfile);
-	if (FDTDRadiator::SourceKind == 1 && FDTDRadiator::SourceType == 1) {//低阶TE圆电辐射器
-		Radiator.ResetRadiator_RoundL(float(C_Speed / FDTDRadiator::Frequency), float(FDTDRadiator::Radius), FDTDRadiator::Ns, FDTDRadiator::Ns, FDTDRadiator::N_spa, FDTDRadiator::Lc, FDTDRadiator::Lp);
-		Radiator.GenerateCellArray_RoundL();
-		if (FDTDRadiator::F > 0) {
-			Radiator.SetFirstMirror_RoundL(FDTDRadiator::F); //待查验
+		//Part II Setup Model
+		//建立辐射器的剖分
+		//SetUp Radiator Mesh
+		CRadiator Radiator(FDTDRadiator::SourceKind, FDTDRadiator::SourceType, 0, FDTDRadiator::WG_m, FDTDRadiator::WG_n, FDTDRadiator::Ns, FDTDRadiator::Ns, C_Speedf / float(Frequency), float(FDTDRadiator::Radius), FDTDRadiator::Lc, FDTDRadiator::Lp, 0, 0, 0, 0, 0, 0);
+		Radiator.SetLogfile(&logfile);
+		if (FDTDRadiator::SourceKind == 1 && FDTDRadiator::SourceType == 1) {//低阶TE圆电辐射器
+			Radiator.ResetRadiator_RoundL(float(C_Speed / FDTDRadiator::Frequency), float(FDTDRadiator::Radius), FDTDRadiator::Ns, FDTDRadiator::Ns, FDTDRadiator::N_spa, FDTDRadiator::Lc, FDTDRadiator::Lp);
+			Radiator.GenerateCellArray_RoundL();
+			if (FDTDRadiator::F > 0) {
+				Radiator.SetFirstMirror_RoundL(FDTDRadiator::F); //待查验
+			}
+			//cout << " LowOrder Radiator and Mirror Parameters:" << endl;
+			//cout << "   Radius:" << Radius << "m, Cut Propagation Section Length: " << Lc << "m, Mirror Height: " << Radiator.MirrorHeight << "m, Mirror Focus Length:" << F << "m." << endl;
+			//cout << "   Model Domain Size, Nx: " << Radiator.Nx_model << ", Ny: " << Radiator.Ny_model << ", Nz: " << Radiator.Nz_model << endl;
+			//cout << "   Leads to " << Radiator.Nx_model*Radiator.Ny_model*Radiator.Nz_model / 1.0e6 << " Mcells" << endl;
+			logfile << " LowOrder Radiator and Mirror Parameters:" << endl;
+			logfile << "   Radius:" << FDTDRadiator::Radius << "m, Cut Propagation Section Length: " << FDTDRadiator::Lc << "m, Mirror Height: " << Radiator.MirrorHeight << "m, Mirror Focus Length:" << FDTDRadiator::F << "m." << endl;
+			logfile << "   Model Domain Size, Nx: " << Radiator.Nx_model << ", Ny: " << Radiator.Ny_model << ", Nz: " << Radiator.Nz_model << endl;
+			logfile << "   Leads to " << Radiator.Nx_model*Radiator.Ny_model*Radiator.Nz_model / 1.0e6 << " Mcells" << endl;
+
+			Nx_model = Radiator.Nx_model;
+			Ny_model = Radiator.Ny_model;
+			Nz_model = Radiator.Nz_model;
+			dx = Radiator.dx;
+			dy = Radiator.dy;
+			dz = Radiator.dz;
+
+
+			//int _timemode, int _Nfreq, float _BW
+			//选取DT 使其恰好是中心频率的4倍整数分之一
+			SelectDT(dx, dy, dz);
+
+			logfile << "  Discrete interval in X: " << dx << "m, in Y: " << dy << "m, in Z: " << dz << "m." << endl;
+			logfile << "  Discrete interval in lambda, X: " << dx*FDTDRadiator::Frequency / C_Speedf << ", Y: " << dy*FDTDRadiator::Frequency / C_Speedf << ", Z: " << dz*FDTDRadiator::Frequency / C_Speedf << "." << endl;
+			logfile << "  Required max dt: " << FDTDRadiator::Requireddt << ", Used dt: " << FDTDRadiator::cdt << ", T contains" << 1.0 / FDTDRadiator::cdt / FDTDRadiator::Frequency << "dt. Ref:" << FDTDRadiator::NN * 4 << endl;
+			//ParameterPass
+			FDTD.Initial(FDTDRadiator::OmpNum, FDTDRadiator::NN, Nx_model, Ny_model, Nz_model, FDTDRadiator::N_spa, 8, FDTDRadiator::cdt, dx, dy, dz, FDTDRadiator::Frequency);
+			FDTD.MemoryAllocate(0, 1, 0);	//这个是单频的形式		
+			//int _threadNum, int _NN, int _Nx_model, int _Ny_model, int _Nz_model, int _Nspa, int _num_pml, float _dt, float _dx, float _dy, float _dz, float _Frequency
+			if (FDTDRadiator::F>0) {
+				Nx_exc = Ns;	Ny_exc = Ns;
+				Nz_exc = Radiator.Pz_model;
+				Shiftx = Radiator.Px_model + N_spa;
+				Shifty = Radiator.Py_model + N_spa;
+			}
+			else {
+				Nx_exc = Ns;	Ny_exc = Ns;
+				Nz_exc = Radiator.Pz_model;
+				Shiftx = Radiator.Px_model + 2 * N_spa;
+				Shifty = Radiator.Py_model + 2 * N_spa;
+			}
+
+			//Load PEC Structure From Radiator
+			FDTD.SetupModel(Radiator.EpsMap, Radiator.Esig);
+			//int*** _EpsMap, float*** _Esig
+			FDTD.SetExcPort(Nz_exc, Nx_exc, Ny_exc, Shiftx, Shifty, Ex_Port, Ey_Port, Hx_Port, Hy_Port);
+
+			Radiator.~CRadiator();
 		}
-		//cout << " LowOrder Radiator and Mirror Parameters:" << endl;
-		//cout << "   Radius:" << Radius << "m, Cut Propagation Section Length: " << Lc << "m, Mirror Height: " << Radiator.MirrorHeight << "m, Mirror Focus Length:" << F << "m." << endl;
-		//cout << "   Model Domain Size, Nx: " << Radiator.Nx_model << ", Ny: " << Radiator.Ny_model << ", Nz: " << Radiator.Nz_model << endl;
-		//cout << "   Leads to " << Radiator.Nx_model*Radiator.Ny_model*Radiator.Nz_model / 1.0e6 << " Mcells" << endl;
-		logfile << " LowOrder Radiator and Mirror Parameters:" << endl;
-		logfile << "   Radius:" << FDTDRadiator::Radius << "m, Cut Propagation Section Length: " << FDTDRadiator::Lc << "m, Mirror Height: " << Radiator.MirrorHeight << "m, Mirror Focus Length:" << FDTDRadiator::F << "m." << endl;
-		logfile << "   Model Domain Size, Nx: " << Radiator.Nx_model << ", Ny: " << Radiator.Ny_model << ", Nz: " << Radiator.Nz_model << endl;
-		logfile << "   Leads to " << Radiator.Nx_model*Radiator.Ny_model*Radiator.Nz_model / 1.0e6 << " Mcells" << endl;
 	}
-	//选取DT 使其恰好是中心频率的4倍整数分之一
-	SelectDT(Radiator.dx,Radiator.dy,Radiator.dz);
-	//cout << "  Discrete interval in X: " << Radiator.dx << "m, in Y: " << Radiator.dy << "m, in Z: " << Radiator.dz << "m." << endl;
-	//cout << "  Discrete interval in lambda, X: " << Radiator.dx*Frequency / C_Speedf << ", Y: " << Radiator.dy*Frequency / C_Speedf << ", Z: " << Radiator.dz*Frequency / C_Speedf << "." << endl;
-	//cout << "  Required max dt: " << Requireddt << ", Used dt: " << cdt << ", T contains" << 1.0 / cdt / Frequency << "dt. Ref:" << NN * 4 << endl;
-	logfile << "  Discrete interval in X: " << Radiator.dx << "m, in Y: " << Radiator.dy << "m, in Z: " << Radiator.dz << "m." << endl;
-	logfile << "  Discrete interval in lambda, X: " << Radiator.dx*FDTDRadiator::Frequency / C_Speedf << ", Y: " << Radiator.dy*FDTDRadiator::Frequency / C_Speedf << ", Z: " << Radiator.dz*FDTDRadiator::Frequency / C_Speedf << "." << endl;
-	logfile << "  Required max dt: " << FDTDRadiator::Requireddt << ", Used dt: " << FDTDRadiator::cdt << ", T contains" << 1.0 / FDTDRadiator::cdt / FDTDRadiator::Frequency << "dt. Ref:" << FDTDRadiator::NN * 4 << endl;
+	else {
+	
+
+	}
 
 
-
-	//不同的频点-高阶模的交散半径不一样 最好逐点频计算
-	//不同的频点-低阶模的变化要小一些 可以带宽计算
-	CFDTD FDTD;	
-	FDTD.SetLogfile(&logfile);			//设置logfile
-	FDTD.SetReturnFloat(FDTDRadiator::returnFloat, FDTDRadiator::user);	//设置回调函数
-	ApertureRadiation HuygensPro;	
-	HuygensPro.SetLogfile(&logfile);	//设置logfile
-	HuygensPro.SetReturnFloat(FDTDRadiator::returnFloat, FDTDRadiator::user);	//设置回调函数
-	Position3D SourceCenter;
-
-	//ParameterPass
-	FDTD.Initial(FDTDRadiator::OmpNum, FDTDRadiator::NN, Radiator.Nx_model, Radiator.Ny_model, Radiator.Nz_model, FDTDRadiator::N_spa, 8, FDTDRadiator::cdt, Radiator.dx, Radiator.dy, Radiator.dz, FDTDRadiator::Frequency);
-	//int _threadNum, int _NN, int _Nx_model, int _Ny_model, int _Nz_model, int _Nspa, int _num_pml, float _dt, float _dx, float _dy, float _dz, float _Frequency
-
-	FDTD.MemoryAllocate(0, 1, 0);	//这个是单频的形式
-	//int _timemode, int _Nfreq, float _BW
 	
 	//SetUpHuygens - Freq;
 	HuygensPro.SetUpFrequency(FDTD.Nfreq, FDTD.freq, FDTD.BW);
 	HuygensPro.SetUpPropagatedAperture(FDTDRadiator::AperturePosition, FDTDRadiator::ApertureDirection, FDTDRadiator::UDirection, FDTDRadiator::VDirection, FDTDRadiator::Lu, FDTDRadiator::Lv, FDTDRadiator::Nu, FDTDRadiator::Nv);
 	
-	int Nx_exc;	int Ny_exc;
-	int Nz_exc;
-	int Px_exc;
-	int Py_exc;
-
-	if(FDTDRadiator::F>0){
-		Nx_exc = Ns;	Ny_exc = Ns;
-		Nz_exc = Radiator.Pz_model;
-		Px_exc = Radiator.Px_model + N_spa;
-		Py_exc = Radiator.Py_model + N_spa;
-	}
-	else {
-		Nx_exc = Ns;	Ny_exc = Ns;
-		Nz_exc = Radiator.Pz_model;
-		Px_exc = Radiator.Px_model + 2*N_spa;
-		Py_exc = Radiator.Py_model + 2*N_spa;
-	}
-	//Feed Excitation from Waveguide Port
-
-	//Load PEC Structure From Radiator
-	FDTD.SetupModel(Radiator.EpsMap, Radiator.Esig);
-	//int*** _EpsMap, float*** _Esig
-	FDTD.SetExcPort(Nz_exc, Nx_exc, Ny_exc, Px_exc, Py_exc, Ex_Port, Ey_Port, Hx_Port, Hy_Port);
 	//int _Nz_exc, int _Nx_exc, int _Ny_exc, int _Px_exc, int Py_exc, complex<float>** _Ex_Port, complex<float>** _Ey_Port, complex<float>** _Hx_Port, complex<float>** _Hy_Port
 
 	//SetUpHuygens - Position 注意：低阶辐射器本身朝-X方向，一级镜朝+X方向
-	SourceCenter.setX(-(Px_exc - N_spa*2)*Radiator.dx*0.5);
+	SourceCenter.setX(-(Shiftx - N_spa*2)*dx*0.5);
 	SourceCenter.setY(0.0);
 	SourceCenter.setZ(FDTD.Nz_DFT*FDTD.dz*0.5 - FDTDRadiator::Lp - FDTD.N_spa*FDTD.dz);
 	//cout << "SourceCenter, X, Y, Z, m: " << SourceCenter.X() << " " << SourceCenter.Y() << " " << SourceCenter.Z() << endl;
@@ -448,7 +578,7 @@ void FDTDRadiator::run() {
 	FDTD.~FDTD();
 	HuygensPro.~ApertureRadiation();
 	logfile.close();	//写文件
-	Radiator.~CRadiator();
+
 
 	//写回调位置！！！！！！！！！！！！！！！！！
 

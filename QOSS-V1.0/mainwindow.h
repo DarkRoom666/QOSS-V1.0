@@ -142,9 +142,6 @@ private slots:
 
 	void on_DenisovParameters();
 
-	void on_Mesh();
-	void on_PO();
-
 	// ------------------- 右键函数 ----------------------------------
 	void on_treeWidget_ContextMenuRequested(QPoint pos);// 右键菜单
 
@@ -208,8 +205,6 @@ private:
 	QAction * PVVAAction;     // 计算pVVA
 	QAction * FDTDAction;     // 计算FDTDAction
 	QAction * PhaseAction;    // 相位修正
-	QAction * MeshAction;    // mesh
-	QAction * POAction;    // po
 
 	// 右键
 	QAction * modifyingMirrorAction;
@@ -287,8 +282,6 @@ private:
 	showDenisov *showDenisovPtr;
 	showFDTD * showFDTDPtr;
 	WaveguideWidget * waveguideWidget;
-
-	bool isMeshFlag;
 
 };
 

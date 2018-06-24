@@ -33,7 +33,7 @@ STLMirror::~STLMirror()
 {
 }
 
-void STLMirror::calPolyData(vtkSmartPointer<vtkPolyData>& ptr, double ds)
+void STLMirror::calPolyData(double ds)
 {
 	vtkSmartPointer<vtkTransform> transform = 
 		vtkSmartPointer<vtkTransform>::New();
@@ -49,13 +49,14 @@ void STLMirror::calPolyData(vtkSmartPointer<vtkPolyData>& ptr, double ds)
 	TransFilter->SetTransform(transform); //use vtkTransform (or maybe vtkLinearTransform)
 	TransFilter->Update();
 
-	ptr = TransFilter->GetOutput();
+	polyData = TransFilter->GetOutput();
 }
 
 void STLMirror::updateData()
 {
 	if (!fileName.empty())
 	{
+		calPolyData();
 		calActor();
 	}
 
@@ -92,6 +93,7 @@ void STLMirror::readData()
 	reader->Update();
 	polyDataSTL = reader->GetOutput();
 
+	calPolyData();
 	calActor();
 }
 

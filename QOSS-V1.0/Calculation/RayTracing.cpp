@@ -179,11 +179,10 @@ void calculation::RayTracing::calcReflectByQuadricSurface(const Vector3 & startP
 
 	if (ray_CurvedSurface(tempData, tempDirection, tempStartPiont, t, intersection))
 	{
-		Vector3 intersectionGlobal = translateMatrix[0] * rotatMatrix[0] * intersection;
-		//bool isInRestrictionFlag = isInRestriction(intersection);
-		/*const vector<Restriction*> restrictions = mirror->getRestrictionAll();
+		const vector<Restriction*> restrictions = mirror->getRestrictionAll();
 		// 将模型的相对坐标系转到世界坐标系
-		
+		Vector3 intersectionGlobal = translateMatrix[0] * rotatMatrix[0] * intersection;
+		bool isInRestriction = true;
 		for (int i = 0; i < restrictions.size(); i++)
 		{
 			const vector<double>& tempRestrictionData = restrictions[i]->getData();
@@ -204,9 +203,9 @@ void calculation::RayTracing::calcReflectByQuadricSurface(const Vector3 & startP
 				isInRestriction = false;
 				break;
 			}
-		}*/
+		}
 		
-		if (!isInRestriction(intersectionGlobal)) //不满足限制条件
+		if (!isInRestriction) //不满足限制条件
 		{
 			intersection = startPiont; // 让交点等于起点 方向不变 避免对无交点时特殊处理
 			isIntersect = false;
@@ -661,23 +660,14 @@ bool calculation::RayTracing::isInRestriction(const Vector3 & intersectionGlobal
 		{
 			return false;
 		}
-		if (restrictions[i]->getType() == Restriction::RES_CYLINDER)
-		{
-			double tempRadius = intersectionLocal.x * intersectionLocal.x +
-				intersectionLocal.y * intersectionLocal.y;
+		double tempRadius = intersectionLocal.x * intersectionLocal.x +
+			intersectionLocal.y * intersectionLocal.y;
 
-			if (tempRadius > tempRestrictionData[0] * tempRestrictionData[0])
-			{
-				return false;
-			}
-		}
-		else
+		if (tempRadius > tempRestrictionData[0] * tempRestrictionData[0])
 		{
-			if (abs(intersectionLocal.x) > tempRestrictionData[0] / 2 ||
-				abs(intersectionLocal.y) > tempRestrictionData[0] / 2)
-				return false;
+			return false;
+			break;
 		}
-
 	}
 	return true;
 }

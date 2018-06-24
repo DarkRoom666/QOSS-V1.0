@@ -37,7 +37,7 @@ QuadricSurfaceMirror::~QuadricSurfaceMirror()
 {
 }
 
-void QuadricSurfaceMirror::calPolyData(vtkSmartPointer<vtkPolyData>& polyDataPtr, double ds)
+void QuadricSurfaceMirror::calPolyData(double ds)
 {
 	if (restrictions.empty())
 	{
@@ -52,12 +52,8 @@ void QuadricSurfaceMirror::calPolyData(vtkSmartPointer<vtkPolyData>& polyDataPtr
 		if (ds == 0)
 			sample->SetSampleDimensions(60, 60, 30);
 		else
-			//sample->SetSampleDimensions(int(radius / ds) * 2,
-			//	int(radius / ds) * 2, int(-temp / ds) * 2); // 采样点和ds有关
-			sample->SetSampleDimensions(
-				int((data[11] - data[10]) / ds),
-				int((data[13] - data[12]) / ds),
-				int((data[15] - data[14]) / ds)); // 采样点和ds有关
+			sample->SetSampleDimensions(int(radius / ds) * 2,
+				int(radius / ds) * 2, int(-temp / ds) * 2); // 采样点和ds有关
 		sample->SetImplicitFunction(quadric);
 		sample->SetModelBounds(data[10], data[11], data[12], data[13], data[14], data[15]);
 		vtkSmartPointer<vtkContourFilter> contourFilter = vtkSmartPointer<vtkContourFilter>::New();
@@ -79,16 +75,17 @@ void QuadricSurfaceMirror::calPolyData(vtkSmartPointer<vtkPolyData>& polyDataPtr
 		TransFilter->SetInputData(polyData);
 		TransFilter->SetTransform(transform); //use vtkTransform (or maybe vtkLinearTransform)
 		TransFilter->Update();
-		polyDataPtr =  TransFilter->GetOutput();
+		polyData = TransFilter->GetOutput();
 	}
 	else
 	{
-		calcRestriction(polyDataPtr);
+		calcRestriction();
 	}
 }
 
 void QuadricSurfaceMirror::updateData()
 {
+	calPolyData();
 	calcActorAxes();
 	calActor();
 }

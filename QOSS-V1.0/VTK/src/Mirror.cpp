@@ -45,10 +45,8 @@ vtkSmartPointer<vtkActor> Mirror::getActor() const
 
 void Mirror::calActor()
 {
-	vtkSmartPointer<vtkPolyData> polyDataPtr;
-	calPolyData(polyDataPtr);
 	vtkSmartPointer<vtkPolyDataMapper>mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-	mapper->SetInputData(polyDataPtr);
+	mapper->SetInputData(polyData);
 	mapper->ScalarVisibilityOff();
 
 	actor->SetMapper(mapper);
@@ -139,9 +137,14 @@ void Mirror::moveRestriction(Mirror * ptr)
 	updateData();
 }
 
-void Mirror::calcRestriction(vtkSmartPointer<vtkPolyData>& ptr)
+void Mirror::calcRestriction()
 {
 	calculation::RayTracing rayTracing(this);
+
+	//vtkSmartPointer<vtkLine> p1 = vtkSmartPointer<vtkLine>::New();
+	//vtkSmartPointer<vtkCellArray> pLineCell =
+	//	vtkSmartPointer<vtkCellArray>::New();
+	//int cout = 0;
 
 	for (int i = 0; i < restrictions.size(); i++)
 	{
@@ -159,17 +162,27 @@ void Mirror::calcRestriction(vtkSmartPointer<vtkPolyData>& ptr)
 			if (isFlag)
 			{
 				points->InsertNextPoint(inter.x, inter.y, inter.z);
+				//points->InsertNextPoint(x.x, x.y, x.z);
+				//points->InsertNextPoint(x.x + toRay.x, x.y + toRay.y, x.z + toRay.z);
+
+				//p1->GetPointIds()->SetId(0, cout++);
+				//p1->GetPointIds()->SetId(1, cout++);
+				//pLineCell->InsertNextCell(p1);
 
 			}
 		}
-		ptr = vtkSmartPointer<vtkPolyData>::New();
-		ptr->SetPoints(points);
+		polyData = vtkSmartPointer<vtkPolyData>::New();
+		polyData->SetPoints(points);
+
+		//polyData = vtkSmartPointer<vtkPolyData>::New();
+		//polyData->SetPoints(points); //获得网格模型中的几何数据：点集  
+		//polyData->SetLines(pLineCell);
 
 		vtkSmartPointer<vtkDelaunay2D> delaunay =
 			vtkSmartPointer<vtkDelaunay2D>::New();
-		delaunay->SetInputData(ptr);
+		delaunay->SetInputData(polyData);
 		delaunay->Update();
-		ptr = delaunay->GetOutput();
+		polyData = delaunay->GetOutput();
 	}
 }
 
@@ -240,10 +253,9 @@ void Mirror::calcActorAxes()
 
 void Mirror::saveSTL()
 {
-	// 改
 	vtkSmartPointer<vtkSTLWriter> writer =
 		vtkSmartPointer<vtkSTLWriter>::New();
-	//calPolyData(polyData, 0.01);
+	calPolyData(0.01);
 	writer->SetInputData(polyData);
 	writer->SetFileName("test.stl");
 	writer->Update();
@@ -253,10 +265,5 @@ Json::Value  Mirror::getDataJson(const string& dir, int index) const
 {
 	return Json::Value();
 	// TODO: 在此处插入 return 语句
-}
-
-void Mirror::genMesh(double ds)
-{
-	calPolyData(polyData, ds);
 }
 

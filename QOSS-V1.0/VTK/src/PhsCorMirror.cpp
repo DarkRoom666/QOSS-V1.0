@@ -39,7 +39,7 @@ PhsCorMirror::~PhsCorMirror()
 	}
 }
 
-void PhsCorMirror::calPolyData(vtkSmartPointer<vtkPolyData>& ptr, double ds)
+void PhsCorMirror::calPolyData(double ds)
 {
 	vtkFloatArray *scalars = vtkFloatArray::New();
 	vtkSmartPointer<vtkPoints> points =
@@ -73,11 +73,12 @@ void PhsCorMirror::calPolyData(vtkSmartPointer<vtkPolyData>& ptr, double ds)
 	TransFilter->SetTransform(transform); //use vtkTransform (or maybe vtkLinearTransform)
 	TransFilter->Update();
 	polyData = TransFilter->GetOutput();
-	ptr = TransFilter->GetOutput();
+
 }
 
 void PhsCorMirror::updateData()
 {
+	calPolyData();
 	calActor();
 }
 

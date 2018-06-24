@@ -98,8 +98,6 @@ public:
 
 	void clear();
 
-	void mesh(double ds);
-
 private:
 	static MyData * _myData;
 	bool isModifiedFlag;  // 标志该类数据是否被修改

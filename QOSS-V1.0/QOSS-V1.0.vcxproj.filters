@@ -461,36 +461,6 @@
     <ClCompile Include="util\comUtil.cpp">
       <Filter>Source Files\util</Filter>
     </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_MeshWidget.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_MeshWidget.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
-    <ClCompile Include="Qt\src\MeshWidget.cpp">
-      <Filter>Source Files\Qt</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_MeshThread.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_MeshThread.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
-    <ClCompile Include="Qt\src\MeshThread.cpp">
-      <Filter>Source Files\Qt</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_WaveguideWidget.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_WaveguideWidget.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
-    <ClCompile Include="Qt\src\WaveguideWidget.cpp">
-      <Filter>Source Files\Qt</Filter>
-    </ClCompile>
-    <ClCompile Include="VTK\src\WaveguideRadiator.cpp">
-      <Filter>Source Files\VTK</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="mainwindow.h">
@@ -588,15 +558,6 @@
     </CustomBuild>
     <CustomBuild Include="DenisovRadiator\showDenisov.h">
       <Filter>Header Files\Denisov</Filter>
-    </CustomBuild>
-    <CustomBuild Include="Qt\include\MeshWidget.h">
-      <Filter>Header Files\Qt</Filter>
-    </CustomBuild>
-    <CustomBuild Include="Qt\include\MeshThread.h">
-      <Filter>Header Files\Qt</Filter>
-    </CustomBuild>
-    <CustomBuild Include="Qt\include\WaveguideWidget.h">
-      <Filter>Header Files\Qt</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
@@ -752,9 +713,6 @@
     </ClInclude>
     <ClInclude Include="util\comUtil.h">
       <Filter>Header Files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="VTK\include\WaveguideRadiator.h">
-      <Filter>Header Files\VTK</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

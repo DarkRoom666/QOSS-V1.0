@@ -1,15 +1,10 @@
-#include "DenisovRadiator.h"
-#include "CodeJin/OMTfunctions.h"
-#include "CodeJin/Mathematical_Functions_Jin.h"
-#include "CodeJin/SourceModeGenerationD.h"	//modified class for Denisov Design
-#include "CodeJin/eigen/Eigen/Core"
-#include "CodeJin/eigen/Eigen/Dense"
-#include "CodeJin/eigen/Eigen/src/Core/Array.h"
+#include "../DenisovRadiator/DenisovRadiator.h"
+#include "../DenisovRadiator/CodeJin/OMTfunctions.h"
+#include "../DenisovRadiator/CodeJin/Mathematical_Functions_Jin.h"
+#include "../DenisovRadiator/CodeJin/SourceModeGenerationD.h"	//modified class for Denisov Design
+#include "../DenisovRadiator/CodeJin/SourceModeGenerationT.h"	//modified class for FDTD output
 #include <fstream>
-
-using namespace Eigen;
 using namespace calculation;
-using namespace std;
 
 DenisovRadiator::DenisovRadiator()
 {
@@ -158,8 +153,8 @@ void DenisovRadiator::run(){
 	//Eigen::VectorXd KzVec;
 
 	//各个模式向量
-	vector<int> MVec;
-	vector<int> NVec;
+	//vector<int> MVec;
+	//vector<int> NVec;
 	//Chi root of dbessel
 	vector<double> ChiVec;
 	//kp 横向波数  
@@ -171,40 +166,44 @@ void DenisovRadiator::run(){
 	//转换矩阵
 	Eigen::MatrixXcd TransArray;
 	//Store
-	Eigen::ArrayXXcd StoreCoeVec;
+	//Eigen::ArrayXXcd StoreCoeVec;
 
-	int SpanM;	int SpanN;
 	if (DenisovRadiator::m == 22 && DenisovRadiator::n == 6) {
-		SpanM = 15;
-		SpanN = 9;
+		mspan = 15;
+		nspan = 9;
+	}
+	else if (DenisovRadiator::m == 26 && DenisovRadiator::n == 6) {
+		mspan = 15;
+		nspan = 9;
 	}
 	else if (DenisovRadiator::m == 28 && DenisovRadiator::n == 8) {
-		SpanM = 15;
-		SpanN = 9;
+		mspan = 15;
+		nspan = 9;
 	}
 	else if (DenisovRadiator::m == 6 && DenisovRadiator::n == 2) {
-		SpanM = 9;
-		SpanN = 3;
+		mspan = 9;
+		nspan = 3;
 	}
-	
-	
-	CoeVec.resize(SpanM*SpanN);
-	ChiVec.resize(SpanM*SpanN);
-	KpVec.resize(SpanM*SpanN);
-	KzVec.resize(SpanM*SpanN);
-	TransArray.resize(SpanM*SpanN, SpanM*SpanN);
-	StoreCoeVec.resize(SpanM*SpanN, DenisovRadiator::Nz+1);
+	DenisovRadiator::mspan = mspan;
+	DenisovRadiator::nspan = nspan;
+
+	CoeVec.resize(mspan*nspan);
+	ChiVec.resize(mspan*nspan);
+	KpVec.resize(mspan*nspan);
+	KzVec.resize(mspan*nspan);
+	TransArray.resize(mspan*nspan, mspan*nspan);
+	StoreCoeVec.resize(mspan*nspan, DenisovRadiator::Nz+1);
 
 	//Set Up M.N Vector
-	MVec.resize(SpanM*SpanN);
-	NVec.resize(SpanM*SpanN);
-	for (int mm = 0; mm < SpanM; mm++) {
-		for (int nn = 0; nn < SpanN; nn++) {
-			MVec[nn + mm*SpanN] = DenisovRadiator::m + mm - (SpanM - 1) / 2;
-			NVec[nn + mm*SpanN] = DenisovRadiator::n + nn - (SpanN - 1) / 2;
+	MVec.resize(mspan*nspan);
+	NVec.resize(mspan*nspan);
+	for (int mm = 0; mm < mspan; mm++) {
+		for (int nn = 0; nn < nspan; nn++) {
+			MVec[nn + mm*nspan] = DenisovRadiator::m + mm - (mspan - 1) / 2;
+			NVec[nn + mm*nspan] = DenisovRadiator::n + nn - (nspan - 1) / 2;
 		}
 	}
-	for (int i = 0; i < SpanM*SpanN; i++) {
+	for (int i = 0; i < mspan*nspan; i++) {
 		//Initialize CoeVec0
 		if (MVec[i] == DenisovRadiator::m && NVec[i] == DenisovRadiator::n) {
 			CoeVec[i] = 1.0;
@@ -224,18 +223,93 @@ void DenisovRadiator::run(){
 		else {
 			KzVec[i] = 0.0;
 		}
-
-
 	}
 	fstream Matrixout;
+	//这里可以设置OpenMp
+	//Open MP
+	int ompNum = 16;
+	vector<int> r_s;	r_s.resize(ompNum);
+	vector<int> r_n;	r_n.resize(ompNum);
+	for (int i = 0; i<ompNum; i++) {
+		r_n[i] = (mspan*nspan) / ompNum;
+		int rest = (mspan*nspan) % ompNum;
+		if (i<rest && rest != 0)  r_n[i] += 1;
+		if (i == 0) {
+			r_s[i] = 0;
+		}
+		else {
+			r_s[i] = r_s[i - 1] + r_n[i - 1];
+		}
+	}
 
 	for (int nn = 0; nn < Nz; nn++) {//Propagation Distance
 		float zp = (nn + 0.5)*DenisovRadiator::dz;
 		int rr, cc;
 		TransArray.setZero();
 
+		omp_set_num_threads(ompNum);
+		#pragma omp parallel
+		{	
+			int id = omp_get_thread_num();
+			//Fill TransArray
+			for (int rr_omp = r_s[id]; rr_omp < r_s[id]+r_n[id]; rr_omp++) {	//row
+				int mr = MVec[rr_omp];	//m0 in Matlab
+				int nr = NVec[rr_omp];	//n0 in Matlab
+				double dz_omp = DenisovRadiator::dz;
+				double radius_omp = DenisovRadiator::radius;
+									//TransArray(ir, ir) = -j*kkzmn_alfa(m0, n0)*exp(-j*kkzmn_alfa(m0, n0)*dz / 2);
+				double middle = (-1.0*0.5)*KzVec[rr_omp] * dz_omp;
+				TransArray(rr_omp, rr_omp) = (complex<double>(0.0, -1.0)) * KzVec[rr_omp] * exp(complex<double>(0.0, middle));
+
+				complex<double> see = TransArray(rr_omp, rr_omp)*dz_omp;
+				see = see;
+
+				double sig1a = DenisovRadiator::sig1[nn] / radius_omp;
+				double dsig1a = DenisovRadiator::dsig1[nn] / radius_omp;
+				double sig2a = DenisovRadiator::sig2[nn] / radius_omp;
+				double dsig2a = DenisovRadiator::dsig2[nn] / radius_omp;
+				double freq = DenisovRadiator::frequency;
+				double ra = radius_omp;
+				double db1 = DenisovRadiator::delBeta1;
+				double db2 = DenisovRadiator::delBeta2;
+				int ll1 = DenisovRadiator::l1;
+				int ll2 = DenisovRadiator::l2;
+				double kzr = KzVec[rr_omp];
+				double Chir = ChiVec[rr_omp];
+
+				for (int cc_omp = 0; cc_omp < mspan*nspan; cc_omp++) {	//column
+					int mc = MVec[cc_omp];	//m1 in Matlab
+					int nc = NVec[cc_omp];	//m1 in Matlab
+					complex < double > Temp;
+
+
+					double kzc = KzVec[cc_omp];
+
+					double Chic = ChiVec[cc_omp];
+
+					Temp = CQR(freq, ra, db1, db2, ll1, ll2, zp, sig1a, dsig2a, sig2a, dsig2a, kzr, kzc, Chir, Chic, mr, mc);
+					//Temp = CQR(freq,ra,db1,db2,ll1,ll2,)
+					Temp = Temp * exp(complex<double>(0.0, -1.0*kzc * dz_omp*0.5));
+					TransArray(rr_omp, cc_omp) = TransArray(rr_omp, cc_omp) + Temp;
+					Temp = Temp;
+				}//cc
+				see = see;
+			}//rr
+		}//omp
+
+		CoeVec = CoeVec + (TransArray*CoeVec)*DenisovRadiator::dz;
+
+		for (int rr = 0; rr < mspan*nspan; rr++) {
+			StoreCoeVec(rr, nn + 1) = CoeVec(rr);
+		}
+	/*
+	for (int nn = 0; nn < Nz; nn++) {//Propagation Distance
+		float zp = (nn + 0.5)*DenisovRadiator::dz;
+		int rr, cc;
+		TransArray.setZero();
+
 		//Fill TransArray
-		for (rr = 0; rr < SpanM*SpanN; rr++) {	//row
+		for (rr = 0; rr < mspan*nspan; rr++) {	//row
 			int mr = MVec[rr];	//m0 in Matlab
 			int nr = NVec[rr];	//n0 in Matlab
 			//TransArray(ir, ir) = -j*kkzmn_alfa(m0, n0)*exp(-j*kkzmn_alfa(m0, n0)*dz / 2);
@@ -258,7 +332,7 @@ void DenisovRadiator::run(){
 			double kzr = KzVec[rr];
 			double Chir = ChiVec[rr];
 
-			for (cc = 0; cc < SpanM*SpanN; cc++) {	//column
+			for (cc = 0; cc < mspan*nspan; cc++) {	//column
 				int mc = MVec[cc];	//m1 in Matlab
 				int nc = NVec[cc];	//m1 in Matlab
 				complex < double > Temp;
@@ -276,66 +350,45 @@ void DenisovRadiator::run(){
 			}//cc
 			see = see;
 		}//rr
-		/*
-		Matrixout.open("./Matrixout.txt", ios::out);
-		for (int rr = 0; rr < SpanM*SpanN; rr++) {
-			for (int cc = 0; cc < SpanM*SpanN; cc++) {
-				Matrixout << TransArray(rr, cc) <<" ";
-			}
-			Matrixout << endl;
-		}
-		Matrixout.close();
 
 	
-		Matrixout.open("./CoeBefore.txt", ios::out);
-		
-		for (int rr = 0; rr < SpanM*SpanN; rr++) {
-			Matrixout << CoeVec(rr) << endl;
-		}
-		Matrixout.close();
-
-		*/
 		CoeVec = CoeVec + (TransArray*CoeVec)*DenisovRadiator::dz;
-/*
-		Matrixout.open("./CoeAfter.txt", ios::out);
-		for (int rr = 0; rr < SpanM*SpanN; rr++) {
-			Matrixout << CoeVec(rr) << endl;
-		}
-		Matrixout.close();
-		*/
-		for (int rr = 0; rr < SpanM*SpanN; rr++) {
+		for (int rr = 0; rr < mspan*nspan; rr++) {
 			StoreCoeVec(rr, nn + 1) = CoeVec(rr);
 		}
-		
+		*/
 
 		double temp;
 		//Take Coefficients
-		int midN = (SpanN - 1) / 2;
-		int midM = (SpanM - 1) / 2;
-		if (DenisovRadiator::m == 22 && DenisovRadiator::n == 6) {
+		int midN = (nspan - 1) / 2;
+		int midM = (mspan - 1) / 2;
+		if (DenisovRadiator::m > 6 ) {
 			//11 TE m-2 n+1 22 6 - 20 7	%TE m - 2 n + 1  22 6 - 20 7
-			DenisovRadiator::Coes9[0] = pow(abs(CoeVec(midN + 1 + (midM - 2)*SpanN)), 2);
+			DenisovRadiator::Coes9[0] = pow(abs(CoeVec(midN + 1 + (midM - 2)*nspan)), 2);
 			//12 TE m+1 n 22 6 - 23 6	%TE m + 1 n  22 6 - 23 6
-			DenisovRadiator::Coes9[1] = pow(abs(CoeVec(midN + 0 + (midM + 1)*SpanN)), 2);
+			DenisovRadiator::Coes9[1] = pow(abs(CoeVec(midN + 0 + (midM + 1)*nspan)), 2);
 			//13 TE m+4 n-1 22 6 - 26 5	%TE m + 4 n - 1 22 6 - 26 5
-			DenisovRadiator::Coes9[2] = pow(abs(CoeVec(midN - 1 + (midM + 4)*SpanN)), 2);
+			DenisovRadiator::Coes9[2] = pow(abs(CoeVec(midN - 1 + (midM + 4)*nspan)), 2);
 			//21 TE m-3 n+1 22 6 - 19 7	%TE m - 3 n + 1  22 6 - 19 7
-			DenisovRadiator::Coes9[3] = pow(abs(CoeVec(midN + 1 + (midM - 3)*SpanN)), 2);
+			DenisovRadiator::Coes9[3] = pow(abs(CoeVec(midN + 1 + (midM - 3)*nspan)), 2);
 			//22 TE m n 22 6 - 22 6		%TE m n    22 6 - 22 6
-			DenisovRadiator::Coes9[4] = pow(abs(CoeVec(midN + 0 + (midM + 0)*SpanN)), 2);
-			//temp = abs(CoeVec[midN + 0 + (midM)*SpanN]); temp = temp*temp;
+			DenisovRadiator::Coes9[4] = pow(abs(CoeVec(midN + 0 + (midM + 0)*nspan)), 2);
+			//temp = abs(CoeVec[midN + 0 + (midM)*nspan]); temp = temp*temp;
 			//DenisovRadiator::Coes9[4] = temp;
 			//23 TE m+3 n-1 22 6 - 25 5	%TE m + 3 n - 1   22 6 - 25 5
-			DenisovRadiator::Coes9[5] = pow(abs(CoeVec(midN - 1 + (midM + 3)*SpanN)), 2);
+			DenisovRadiator::Coes9[5] = pow(abs(CoeVec(midN - 1 + (midM + 3)*nspan)), 2);
 			//31 TE m-4 n+1 22 6 - 18 7	%TE m - 4 n + 1  22 6 - 18 7
-			DenisovRadiator::Coes9[6] = pow(abs(CoeVec(midN + 1 + (midM - 4)*SpanN)), 2);
+			DenisovRadiator::Coes9[6] = pow(abs(CoeVec(midN + 1 + (midM - 4)*nspan)), 2);
 			//32 TE m-1 n 22 6 - 21 6	%TE m - 1 n  22 6 - 21 6
-			DenisovRadiator::Coes9[7] = pow(abs(CoeVec(midN + 0 + (midM - 1)*SpanN)), 2);
+			DenisovRadiator::Coes9[7] = pow(abs(CoeVec(midN + 0 + (midM - 1)*nspan)), 2);
 			//33 TE m+2 n-1 22 6 - 24 5	%TE m + 2 n - 1 22 6 - 24 5
-			DenisovRadiator::Coes9[8] = pow(abs(CoeVec(midN - 1 + (midM + 2)*SpanN)), 2);
+			DenisovRadiator::Coes9[8] = pow(abs(CoeVec(midN - 1 + (midM + 2)*nspan)), 2);
 
 			DenisovRadiator::Coes9[9] = CoeVec.cwiseAbs2().sum();
+
 		}
+
+
 		//把计算得到的各卫星模式的功率比率发回界面
 		//total main neighbor, corner
 		double CoeTotal = Coes9[9];
@@ -345,38 +398,40 @@ void DenisovRadiator::run(){
 		emit SendCoefficients(CoeTotal, CoeMain, CoeNeighbor, CoeCorner, nn);
 
 
-		if ((nn + 1) % 30 == 0) { 
-			
-			
-			for (int rr = 0; rr < SpanM*SpanN; rr++) {
-				if (abs(CoeVec(rr))*abs(CoeVec(rr)) > 0.01) {
-					int mr = MVec[rr];
-					int nr = NVec[rr];
-					SourceModeGenerationD Source(2, 1, 2, mr, nr, DenisovRadiator::frequency, DenisovRadiator::radius,0, 0, DenisovRadiator::Nx);
-					//2, 1, 2, m, n, frequency, radius, 0, 0, Nx
-					//Source.SetSource_Circular(2,1,2,mr,nr,DenisovRadiator::frequency,DenisovRadiator::radius);
-					//Source.SetOutputProperty(Nx);
-					Source.FieldCalculation_Circular();
-					
+		if ((nn + 1) % (Nz/5) == 0) { 
+			omp_set_num_threads(ompNum);
+			#pragma omp parallel
+			{
+				int id = omp_get_thread_num();
+				for (int rr_omp = r_s[id]; rr_omp < r_s[id]+r_n[id]; rr_omp++) {
+					if (abs(CoeVec(rr_omp))*abs(CoeVec(rr_omp)) > 0.01) {
+						int mr = MVec[rr_omp];
+						int nr = NVec[rr_omp];
+						SourceModeGenerationD Source(2, 1, 2, mr, nr, DenisovRadiator::frequency, DenisovRadiator::radius, 0, 0, DenisovRadiator::Nx);
+						//2, 1, 2, m, n, frequency, radius, 0, 0, Nx
+						//Source.SetSource_Circular(2,1,2,mr,nr,DenisovRadiator::frequency,DenisovRadiator::radius);
+						//Source.SetOutputProperty(Nx);
+						Source.FieldCalculation_Circular();
 
-					vector<vector<complex<double>>> TEx;
-					vector<vector<complex<double>>> TEy;
-					TEx.resize(Nx);	TEy.resize(Ny);
-					for (int i = 0; i < Nx; i++) {
-						TEx[i].resize(Ny);
-						TEy[i].resize(Nz);
-					}
-
-					Source.GetEX(TEx); Source.GetEY(TEy);
-
-					for (int i = 0; i < Nx; i++) {
-						for (int j = 0; j < Ny; j++) {
-							Ex[i][j] += TEx[i][j] * CoeVec[rr];
-							Ey[i][j] += TEy[i][j] * CoeVec[rr];
+						vector<vector<complex<double>>> TEx;
+						vector<vector<complex<double>>> TEy;
+						TEx.resize(Nx);	TEy.resize(Ny);
+						for (int i = 0; i < Nx; i++) {
+							TEx[i].resize(Ny);
+							TEy[i].resize(Nz);
 						}
-					}
-				}//if
-			}//rr
+
+						Source.GetEX(TEx); Source.GetEY(TEy);
+
+						for (int i = 0; i < Nx; i++) {
+							for (int j = 0; j < Ny; j++) {
+								Ex[i][j] += TEx[i][j] * CoeVec[rr_omp];
+								Ey[i][j] += TEy[i][j] * CoeVec[rr_omp];
+							}
+						}
+					}//if
+				}//rr
+			}//omp
 			for (int i = 0; i < Nx; i++) {
 				for (int j = 0; j < Ny; j++) {
 					//Ex[i][j] = sqrt(Ex[i][j].real()*Ex[i][j].real()+ Ex[i][j].imag()*Ex[i][j].imag());
@@ -402,7 +457,8 @@ void DenisovRadiator::run(){
 	//}
 	message = "Generating Surface Currents";
 	emit SendText(message);
-
+	
+	//产生表面电流 _omp
 	for(int h = 0; h<DenisovRadiator::Nheight;h++){//Height
 		vector<complex<double>> HPhi_r;	HPhi_r.resize(DenisovRadiator::Nphi);
 		vector<complex<double>> HZ_r;	HZ_r.resize(DenisovRadiator::Nphi);
@@ -410,26 +466,31 @@ void DenisovRadiator::run(){
 			HPhi_r[p] = complex<double>(0.0, 0.0);
 			HZ_r[p] = complex<double>(0.0, 0.0);
 		}
-		int hh = h*DenisovRadiator::Nsparse;
-		for (int rr = 0; rr < SpanM*SpanN; rr++) {//Mode
-			complex<double> Coe = StoreCoeVec(rr, hh);
-			if (abs(CoeVec(rr))*abs(CoeVec(rr)) > 0.01) {//Judge
-				int mr = MVec[rr];
-				int nr = NVec[rr];
-				SourceModeGenerationD Source(2, 1, 2, mr, nr, DenisovRadiator::frequency, DenisovRadiator::radius, 0, 0, DenisovRadiator::Nx);
+		omp_set_num_threads(ompNum);
+		#pragma omp parallel
+		{
+			int id = omp_get_thread_num();
+			int hh = h*DenisovRadiator::Nsparse + Nsparse/2;
+			for (int rr_omp = r_s[id]; rr_omp < r_s[id]+r_n[id]; rr_omp++) {//Mode
+				complex<double> Coe = StoreCoeVec(rr_omp, hh);
+				if (abs(CoeVec(rr_omp))*abs(CoeVec(rr_omp)) > 0.01) {//Judge
+					int mr = MVec[rr_omp];
+					int nr = NVec[rr_omp];
+					SourceModeGenerationD Source(2, 1, 2, mr, nr, DenisovRadiator::frequency, DenisovRadiator::radius, 0, 0, DenisovRadiator::Nx);
 
-				vector<complex<double>> THPhi;
-				vector<complex<double>> THz;
-				THPhi.resize(DenisovRadiator::Nphi);	THz.resize(DenisovRadiator::Nphi);
+					vector<complex<double>> THPhi;
+					vector<complex<double>> THz;
+					THPhi.resize(DenisovRadiator::Nphi);	THz.resize(DenisovRadiator::Nphi);
 
-				Source.GetJ_R(THPhi,THz,DenisovRadiator::Nphi);
+					Source.GetJ_R(THPhi, THz, DenisovRadiator::Nphi);
 
-				for (int p = 0; p < DenisovRadiator::Nphi; p++) {
-					HPhi_r[p] += THPhi[p] * Coe;
-					HZ_r[p] += THz[p] * Coe;
-				}
-			}//if
-		}//rr
+					for (int p = 0; p < DenisovRadiator::Nphi; p++) {
+						HPhi_r[p] += THPhi[p] * Coe;
+						HZ_r[p] += THz[p] * Coe;
+					}
+				}//if
+			}//rr
+		}
 		for (int p = 0; p < Nphi; p++) {
 			DenisovRadiator::J[p][h] = sqrt(HPhi_r[p].real()*HPhi_r[p].real() + HPhi_r[p].imag()*HPhi_r[p].imag() + HZ_r[p].real()*HZ_r[p].real() + HZ_r[p].imag()*HZ_r[p].imag());
 		}
@@ -440,5 +501,61 @@ void DenisovRadiator::run(){
 
 	emit SendBtnOpen();
 	emit SendValue(ii);
+}
+
+void DenisovRadiator::GetExcitationField(vector<vector<complex<double>>> &_Ex, vector<vector<complex<double>>> &_Ey, vector<vector<complex<double>>> &_Hx, vector<vector<complex<double>>> &_Hy, int _index, int _N) {
+	vector<vector<complex<double>>> tempEx;
+	vector<vector<complex<double>>> tempEy;
+	vector<vector<complex<double>>> tempHx;
+	vector<vector<complex<double>>> tempHy;
+	//vector<complex<double>> CoeVec;
+	//中间变量，存储生成的场结果
+	tempEx.resize(_N); for (int i = 0; i < _N; i++) { tempEx[i].resize(_N); }
+	tempEy.resize(_N); for (int i = 0; i < _N; i++) { tempEy[i].resize(_N); }
+	tempHx.resize(_N); for (int i = 0; i < _N; i++) { tempHx[i].resize(_N); }
+	tempHy.resize(_N); for (int i = 0; i < _N; i++) { tempHy[i].resize(_N); }
+
+	Eigen::VectorXcd CoeVec;
+	CoeVec.resize(mspan*nspan);
+	//读取最大值
+	for (int i = 0; i < mspan*nspan; i++) {
+		CoeVec(i) = StoreCoeVec(i,_index);
+	}
+	double max = 0;
+	vector<bool> cal; cal.resize(mspan*nspan);
+	//找最大值
+	for (int i = 0; i < mspan*nspan; i++) {
+		if (abs(CoeVec(i)) > max) max = abs(CoeVec(i));
+	}
+	//找需要计入的值(0.005*Max)
+	for (int i = 0; i < mspan*nspan; i++) {
+		if (abs(CoeVec(i)) > max*5e-3) cal[i] = true;
+		else cal[i] = false;
+	}
+	//开始生成场
+	for (int i = 0; i < mspan*nspan; i++) {
+		if (cal[i]) {//如需计入
+			int mr = MVec[i];
+			int nr = NVec[i];
+
+			SourceModeGenerationD Source(2, 1, 2, mr, nr, DenisovRadiator::frequency, DenisovRadiator::radius, 0, 0, _N);
+			Source.FieldCalculation_CircularT();//计算场
+			Source.GetEX(tempEx);
+			Source.GetEY(tempEy);
+			Source.GetHX(tempHx);
+			Source.GetHY(tempHy);
+			
+			for (int ii = 0; ii < _N; ii++) {
+				for (int jj = 0; jj < _N; jj++) {
+					_Ex[ii][jj] = _Ex[ii][jj] + tempEx[ii][jj];
+					_Ey[ii][jj] = _Ey[ii][jj] + tempEy[ii][jj];
+					_Hx[ii][jj] = _Hx[ii][jj] + tempHx[ii][jj];
+					_Hy[ii][jj] = _Hy[ii][jj] + tempHy[ii][jj];
+				}
+			}
+		}
+	}
+
+
 }
 #include "moc_DenisovRadiator.cpp"

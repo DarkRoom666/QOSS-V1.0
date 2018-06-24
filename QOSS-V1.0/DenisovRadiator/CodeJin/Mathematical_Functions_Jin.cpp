@@ -1,3 +1,4 @@
+#include "../Calculation/Mathematical_Functions.h"
 #include "../DenisovRadiator/CodeJin/Mathematical_Functions_Jin.h"
 
 
