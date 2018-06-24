@@ -112,6 +112,9 @@ mainWindow::mainWindow(QWidget *parent)
 	}
 	else
 	{
+		waveguideWidget = new WaveguideWidget;
+		tabWidget->addTab(waveguideWidget, QString::fromLocal8Bit("Radiator"));
+
 		// 创建默认的镜子
 		myData->createDefaultMirror();
 		GraphTrans graphTrans;

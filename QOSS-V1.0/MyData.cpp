@@ -7,6 +7,7 @@
 #include "VTK/include/MirrorFactory.h"
 #include "VTK/include/RadiatorFactory.h"
 #include "VTK/include/LightShow.h"
+#include "VTK/include/WaveguideRadiator.h"
 #include "util/Definition.h"
 #include "../Calculation/PVVA.h"
 
@@ -259,6 +260,12 @@ void MyData::createRadiator()
 		//radiator->calActorRay();
 	}
 	
+}
+
+void MyData::setWaveguideRadiator(const shared_ptr<WaveguideRadiator>& ptr)
+{
+	waveguideRadiator = ptr;
+	isModifiedFlag = true;
 }
 
 void MyData::setSourceField(Field *ptr)

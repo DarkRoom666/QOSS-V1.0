@@ -41,6 +41,8 @@
 #include "DenisovRadiator/showDenisov.h"
 #include "DenisovRadiator/showFDTD.h"
 
+#include "Qt/include/WaveguideWidget.h"
+
 #include "../../FDTDRadiator/FDTDRadiator.h"
 
 using namespace userInterface;
@@ -284,6 +286,7 @@ private:
 
 	showDenisov *showDenisovPtr;
 	showFDTD * showFDTDPtr;
+	WaveguideWidget * waveguideWidget;
 
 	bool isMeshFlag;
 

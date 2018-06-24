@@ -18,6 +18,7 @@ class Mirror;
 class LightShow;
 class Radiator;
 class Field;
+class WaveguideRadiator;
 
 class MyData //单例
 {
@@ -73,6 +74,10 @@ public:
 	void createRadiator();
 	shared_ptr<Radiator> getRadiator() { return radiator; }
 
+	// 生成波导辐射器
+	void setWaveguideRadiator(const shared_ptr<WaveguideRadiator> &);
+	shared_ptr<WaveguideRadiator> getWaveguideRadiator() { return waveguideRadiator; }
+
 	// 源
 	void setSourceField(Field*);
 	Field* getSourceField() const; 
@@ -116,6 +121,7 @@ private:
 
 	shared_ptr<LightShow> defaultLigthShow;
 	shared_ptr<Radiator> radiator;
+	shared_ptr<WaveguideRadiator> waveguideRadiator; // only in Waveguide 
 
 	// 保存计算结果的场 第0个为源，只能拥有一个源
 	std::map<int, Field*> fieldMap;
