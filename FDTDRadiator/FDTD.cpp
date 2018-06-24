@@ -234,7 +234,7 @@ void CFDTD::MemoryAllocate(int _timemode,int _Nfreq, float _BW)
 
 	stopnn = int(tao * 2/dt + Nz*6);
 	//stopnn = 100;
-	Step2Show = int(stopnn / 50);
+	Step2Show = int(stopnn / 10);
 
 
 	//cout << "Total size: " << Nx << " " << Nz << ", time interval(s): " << dt << ", stopnn: " << stopnn << ", steptoshow: " << Step2Show << endl;
@@ -529,6 +529,100 @@ void CFDTD::SetupModel(int*** _EpsMap, float*** _Esig) {
 	}
 	
 }
+
+void CFDTD::SetupModel(float*** _Eps, float _cx, float _cy, float _cz) {
+	//Allocate_Memory
+	EpsMap = Allocate_3D(EpsMap, Nz + 2, Ny + 2, Nx + 2);
+	Epsr = Allocate_3D(Epsr, Nz + 2, Ny + 2, Nx + 2);
+	Esig = Allocate_3D(Esig, Nz + 2, Ny + 2, Nx + 2);
+	//intialization
+	for (int k = 0; k <= Nz + 1; k++) {
+		for (int j = 0; j <= Ny + 1; j++) {
+			for (int i = 0; i <= Nx + 1; i++) {
+				EpsMap[k][j][i] = 1;
+				Epsr[k][j][i] = Eps0f;
+				Esig[k][j][i] = 0;
+			}
+		}
+	}
+
+	int iShift, jShift, kShift;
+	iShift = N_spa + 1;
+	jShift = N_spa + 1;
+	kShift = 1;
+	int ip, jp, kp;
+	//Load PEC Structure
+	for (int k = 0; k < Nz_model; k++) {
+		kp = k + kShift;
+		for (int j = 0; j < Ny_model; j++) {
+			jp = j + jShift;
+			for (int i = 0; i < Nx_model; i++) {
+				ip = i + iShift;
+				if(_Eps[k][j][i]>0.0){//金属
+					EpsMap[kp][jp][ip] = 0;
+					Esig[kp][jp][ip] = Sig_PECf;
+				}
+				else {//空气
+					EpsMap[kp][jp][ip] = 1;
+					Esig[kp][jp][ip] = 0;
+				}
+
+			}
+		}
+	}
+	//output for Check
+
+	//Generate CA CB Parameters
+	float Eps_Ex, Eps_Ey, Eps_Ez;
+	float sig_Ex, sig_Ey, sig_Ez;
+	for (int k = 1; k <= Nz; k++) {
+		for (int j = 1; j <= Ny; j++) {
+			for (int i = 1; i <= Nx; i++) {
+
+				//Ex Ey Ez Epsr
+				Eps_Ex = (Epsr[k][j][i] + Epsr[k - 1][j][i] + Epsr[k][j - 1][i] + Epsr[k - 1][j - 1][i])*0.25;
+				Eps_Ey = (Epsr[k][j][i] + Epsr[k][j][i - 1] + Epsr[k - 1][j][i] + Epsr[k - 1][j][i - 1])*0.25;
+				Eps_Ez = (Epsr[k][j][i] + Epsr[k][j][i - 1] + Epsr[k][j - 1][i] + Epsr[k][j - 1][i - 1])*0.25;
+
+				//Ex Ey Ez sig
+				sig_Ex = (Esig[k][j][i] + Esig[k - 1][j][i] + Esig[k][j - 1][i] + Esig[k - 1][j - 1][i])*0.25;
+				sig_Ey = (Esig[k][j][i] + Esig[k][j][i - 1] + Esig[k - 1][j][i] + Esig[k - 1][j][i - 1])*0.25;
+				sig_Ez = (Esig[k][j][i] + Esig[k][j][i - 1] + Esig[k][j - 1][i] + Esig[k][j - 1][i - 1])*0.25;
+				//Ey TE
+
+				CA_Ex[k][j][i] = (Eps_Ex / dt - sig_Ex * 0.5) / (Eps_Ex / dt + sig_Ex * 0.5);
+				CA_Ey[k][j][i] = (Eps_Ey / dt - sig_Ey * 0.5) / (Eps_Ey / dt + sig_Ey * 0.5);
+				CA_Ez[k][j][i] = (Eps_Ez / dt - sig_Ez * 0.5) / (Eps_Ez / dt + sig_Ez * 0.5);
+
+				CB_Ex[k][j][i] = 1 / (Eps_Ex / dt + sig_Ex * 0.5);
+				CB_Ey[k][j][i] = 1 / (Eps_Ey / dt + sig_Ey * 0.5);
+				CB_Ez[k][j][i] = 1 / (Eps_Ez / dt + sig_Ez * 0.5);
+			}
+		}
+	}
+	//done!
+	//cout << "Eps Model Set Done!" << endl;
+	(*Logfile) << "Eps Model Set Done!" << endl;
+	//set model&huygensbox center position
+	cx = _cx;	cy = _cy;  cz = _cz;
+	//Position vector
+	xx = Allocate_1D(xx, Nx + 2);
+	yy = Allocate_1D(yy, Ny + 2);
+	zz = Allocate_1D(zz, Nz + 2);
+	for (int i = 0; i <= Nx + 1; i++) {
+		xx[i] = (i - 0.5 - (Nx - Rx_cal_AVX) / 2.0) * dx;
+	}
+	for (int j = 0; j <= Ny + 1; j++) {
+		yy[j] = (j - 0.5) * dy;
+	}
+	for (int k = 0; k <= Nz + 1; k++) {
+		zz[k] = (k - Nz_exc) * dz; //Set Port Position to zero
+	}
+
+
+
+}
+
 void CFDTD::Initial(int _threadNum, int _NN, int _Nx_model, int _Ny_model, int _Nz_model, int _Nspa, int _num_pml, float _dt, float _dx, float _dy, float _dz, float _Frequency){//Modified
 	
 	start = clock();
@@ -573,6 +667,7 @@ void CFDTD::Initial(int _threadNum, int _NN, int _Nx_model, int _Ny_model, int _
 	Nx = Nx + Rx_cal_AVX;			//Total domain
 	//Set DFT
 	//Record Number;
+	//Nz_DFT = Nz_model Nx_DFT = Nx_model Ny_DFT = Ny_model;
 	Nz_DFT = Nz - N_spa;	Nx_DFT = Nx - N_spa*2 - Rx_cal_AVX;	Ny_DFT = Ny - N_spa*2;
 	//Record Position;
 	//Up XoZ
@@ -753,7 +848,7 @@ void CFDTD::Update(){
 			(*Logfile) << "step" << nn << " done! " << stopnn - nn << " left!" << " ";
 		}
 		//回调计算进度
-		if (nn%Step2Show == 0) {
+		if (nn%Step2Show == 0&&nn>0) {
 			if (returnFloat) // 没有注册则不回调
 			{
 				returnFloat(float(nn*1.0 / stopnn * 100.0), user);
@@ -2244,6 +2339,29 @@ void CFDTD::Output(){
 				}
 			}
 			fclose(Fieldout);
+			//输出整体场分布
+			Fieldout = fopen("./EField3D.dat", "wb");
+			fwrite(&Nx_model, sizeof(int), 1, Fieldout);
+			fwrite(&Ny_model, sizeof(int), 1, Fieldout);
+			fwrite(&Nz_model, sizeof(int), 1, Fieldout);
+			fwrite(&dx, sizeof(float), 1, Fieldout);
+			fwrite(&dy, sizeof(float), 1, Fieldout);
+			fwrite(&dz, sizeof(float), 1, Fieldout);
+			fwrite(&cx, sizeof(float), 1, Fieldout);
+			fwrite(&cy, sizeof(float), 1, Fieldout);
+			fwrite(&cz, sizeof(float), 1, Fieldout);
+			float AE;
+			for (k = 1; k <= Nz_model; k++) {
+				for (j = 1; j <= Ny_model; j++) {
+					jj = j + N_spa;
+					for (i = 1; i <= Nx_model; i++) {
+						ii = i + N_spa;
+						AE = sqrt(Ex[k][j][i] * Ex[k][j][i] + Ey[k][j][i] * Ey[k][j][i] + Ez[k][j][i] * Ez[k][j][i]);
+						fwrite(&AE, sizeof(float), 1, Fieldout);
+					}
+				}
+			}
+			fclose(Fieldout);
 			
 			/*
 			fstream FieldFile;
@@ -2679,8 +2797,6 @@ void CFDTD::Output(){
 
 
 		}//if nn = stopnn - 1;
-
-
 	}//if timemode == 0
 
 	if (nn == stopnn - 1) {//计算完成
@@ -2790,6 +2906,10 @@ void CFDTD::Output(){
 		fwrite(&dx, sizeof(float), 1, BinaryWrite);
 		fwrite(&dy, sizeof(float), 1, BinaryWrite);
 		fwrite(&dz, sizeof(float), 1, BinaryWrite);
+		//HuygensBoxPositionCenter
+		fwrite(&cx, sizeof(float), 1, BinaryWrite);
+		fwrite(&cy, sizeof(float), 1, BinaryWrite);
+		fwrite(&cz, sizeof(float), 1, BinaryWrite);
 		//Freq
 		fwrite(&Nfreq, sizeof(int), 1, BinaryWrite);
 		for (f = 0; f < Nfreq; f++) {

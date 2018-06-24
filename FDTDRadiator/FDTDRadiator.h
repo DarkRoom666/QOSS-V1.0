@@ -8,10 +8,12 @@
 #include "Position3D.h"	//公用
 #include "Matrix4D.h"	//公用
 #include "Vector3D.h"	//公用
+#include <string>
 //注意这里不些引用
 
 using namespace std;
 
+//注意 这不是一个Thread哦，可以写不同的运行函数！
 
 //This Part Set the FDTD Computation for a Radiator
 class _declspec(dllexport) FDTDRadiator //整个类都写成了接口
@@ -19,6 +21,16 @@ class _declspec(dllexport) FDTDRadiator //整个类都写成了接口
 public:
 	FDTDRadiator();
 	~FDTDRadiator();
+
+	//FDTDcomputation
+	void SetUpModelRadiator(string _filename);
+	void SetUpExcRadiator(string _filename);
+	void SetFreqList(void);
+	void SetUpCommonFDTD(double _freq, double _ompNum, int _N_spa, int _timemode, int _huygensmode);
+	void runCommonFDTD(void);
+	//ApertureComputation
+
+
 	//This Function Set Up the LowOrder Vlasov Radiator Computation
 	void SetUpLowOrderVlasovRadiator(int _WG_m, int _WG_n, double _Frequency, double _Radius, double _F, int _Ns, int _OmpNum);
 	void SetUpAperturePlane(Position3D _AperturePosition, Vector3D _ApertureDirection, Vector3D _UDirection, Vector3D _VDirection, int _Nu, int _Nv, double _Lu, double _Lv);
@@ -79,6 +91,8 @@ public:
 	vector<vector<complex<float>>> Ev;
 	vector<vector<complex<float>>> Hu;//添加磁场
 	vector<vector<complex<float>>> Hv;//添加电场
+	
+	//fstream logfile
 	char* FILENAME;
 
 	//圆电模式辐射器结构参量
@@ -102,12 +116,39 @@ public:
 	float cdt;
 	float Requireddt;
 	int NN;
-	int N_spa = 10;
-	int OmpNum = 4;
 
 	double PowerRatio;
 
-	//fstream logfile
+	//入射端口
+	complex<float>** Ex_Port;	
+	complex<float>** Ey_Port;	
+	complex<float>** Hx_Port;	
+	complex<float>** Hy_Port;
+
+	//模型点阵
+	float*** Eps;
+	
+	//端口
+	int Nx_exc;			
+	int Ny_exc;
+	int Nz_exc;
+	int Shiftx;
+	int Shifty;
+	//模型
+	int Nx_model;
+	int Ny_model;
+	int Nz_model;
+	float dx;
+	float dy;
+	float dz;
+	float cx;//模型的中心位置	这就是huygensBox的中心位置！
+	float cy;//模型的中心位置
+	float cz;//模型的中心位置
+
+	int OmpNum;
+	int N_spa;	//10 by default
+	int timemode; //0 single frequency computation; 1 multi-frequency computation
+	int huygensmode; //0 five faces huygens Box; 1. cylinder faces to be established
 
 };
 

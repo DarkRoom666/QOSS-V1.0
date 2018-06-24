@@ -24,7 +24,14 @@
 /* This class defines the Denisov Radiator */
 /* This class describe the design process of Denisov Radiator*/
 //First without
+
+#include "CodeJin/eigen/Eigen/Core"
+#include "CodeJin/eigen/Eigen/Dense"
+#include "CodeJin/eigen/Eigen/src/Core/Array.h"
+
 using namespace std;
+using namespace Eigen;
+
 
 
 class DenisovRadiator: public QThread
@@ -75,6 +82,7 @@ public:
 	//Paint Tangential Field
 	int Nx;
 	int Ny;
+
 	vector<vector<complex<double>>> Ex;
 	vector<vector<complex<double>>> Ey;
 	//Paint Surface Current
@@ -97,6 +105,7 @@ public:
 	void SetSurfaceCurrent(int _Nphi, int _Sparse);
 	void GetSurfaceCurrent(vector<vector<double>> &_J, int _Nphi, int _Nheight);
 	void GetSurfaceCurrentLine(vector<vector<double>> &_J, int _Nphi, int _Nposition);
+	void GetExcitationField(vector<vector<complex<double>>> &_Ex, vector<vector<complex<double>>> &_Ey, vector<vector<complex<double>>> &_Hx, vector<vector<complex<double>>> &_Hy, int _index, int N);
 
 	vector<double> Zz;	
 	vector<double> sig1;	
@@ -105,6 +114,11 @@ public:
 	vector<double> dsig2;	
 
 	vector< double> Coes9;
+
+	//Store
+	Eigen::ArrayXXcd StoreCoeVec;
+	vector<int> MVec;
+	vector<int> NVec;
 
 protected:
 	void run();

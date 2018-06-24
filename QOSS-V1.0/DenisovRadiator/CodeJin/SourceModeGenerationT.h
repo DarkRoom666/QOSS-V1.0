@@ -12,21 +12,24 @@ using namespace std;
 /*
 *	created by XD 2017/10/20
 	modified by JM 2017 12
-	为Denisov提供波导模式参数 将进行精简
+	为FDTD提供波导端口输入场
 *   单位默认为米
 *   function 创建圆波导TEmn模式以及矩形波导的场分布
 */
 
-#ifndef SOURCEMODEGENERATIOND_H  // 全大写
-#define SOURCEMODEGENERATIOND_H
+#ifndef SOURCEMODEGENERATIONT_H  // 全大写
+#define SOURCEMODEGENERATIONT_H
 
-namespace calculation
+
+
+namespace calculation 
+
 { // 命令空间 避免命名重复
 
-	class SourceModeGenerationD //类名保持和头文件名字相同
+	class SourceModeGenerationT //类名保持和头文件名字相同
 	{
 	public:
-		SourceModeGenerationD
+		SourceModeGenerationT
 		   (int _SourceKind=1,//这是种类，1是低阶TE模式；2是高阶TE模式；3是矩形波导模式
 			int _SourceType=1,//这是TE模式或者TM模式，TE为1，TM为2
             int _Rotation=0,//左右旋，不存在的为0，左旋为1，右旋为2
@@ -40,7 +43,7 @@ namespace calculation
 		);// 默认构造函数
 
 		// 若有继承 一定要加virtual
-		~SourceModeGenerationD() {
+		~SourceModeGenerationT() {
 			// 若有分配了内存记得释放
 			// if(p) {
 			//   delete p;
@@ -48,8 +51,8 @@ namespace calculation
 			// }
 		};//析构函数
 	
-		void SetSource_Circular(int sourcekind, int sourcetype, int rotation,
-			                    int m0, int n0, double frequency, double radius);
+		void SetSource_Circular(int _sourcekind, int _sourcetype, int _rotation,
+			                    int _m0, int _n0, double _frequency, double _radius);
 		//设置圆波导模式参数
 
 		void SetSource_Rectangle(int sourcekind, int sourcetype, int m0, int n0,
@@ -65,7 +68,6 @@ namespace calculation
 		
 		bool FieldCalculation_Circular();
 		//设置圆波导模式场输出,n只能是偶数，因为采样点不能包含原点，否则公式无法计算
-
 		bool FieldCalculation_CircularT();
 		//计算FDTD仿真需要的切向场分布
 
@@ -111,7 +113,6 @@ namespace calculation
 		void GetHY(vector <vector <complex <double>>> &HY0);//输出HY
 		void GetEZ(vector <vector <complex <double>>> &EZ0);//输出EZ
 		void GetHZ(vector <vector <complex <double>>> &HZ0);//输出HZ
-		bool GetJ_R(vector<complex<double>> &_HPhi, vector<complex<double>> &_Hz, int _Nphi);//输出HPhi
 
 
 
@@ -144,9 +145,6 @@ namespace calculation
 		double ds;//离散点采样间距
 		double Lc;//Cut 高度
 		vector <vector <complex <double>>>  EX,HX,EY,HY,EZ,HZ;
-		
-		vector <complex<double>> HPhi_r;
-		vector <complex<double>> Hz_r;
 		//定义输出矩阵复数形式（6个参量矩阵得到场分布）
 
 	};

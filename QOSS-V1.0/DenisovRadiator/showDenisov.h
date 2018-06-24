@@ -18,6 +18,8 @@
 #include <sstream> 
 #include <string>
 #include <windows.h>
+#include <Vector>
+#include <complex>
 
 //#include "ui_showDenisov.h"		//这个是QT生成的
 
@@ -25,7 +27,7 @@
 #include "CodeJin/qcustomplot.h"		//这个单独放到一个文件夹里
 #include "CodeJin/QPaintField.h"		//这个也单独放到一个文件夹里
 
-#include "DenisovRadiator.h"	//这个要封装成一个DLL 把SourceModeGenerationD集成进去最好-
+#include "../DenisovRadiator/DenisovRadiator.h"	//这个要封装成一个DLL 把SourceModeGenerationD集成进去最好-
 
 #include "../util/Constant_Var.h"	//这个干掉
 
@@ -44,6 +46,9 @@ private slots :
 	void on_btn1();	//
 	void on_btn2();
 	void on_btn3();
+	void on_btn4();
+	void on_btn5();//Save
+	void on_btn6();//Load
 	void ChangeValue(double _in);
 	void ChangeText(QString _in);
 	void BtnClose();
@@ -51,16 +56,16 @@ private slots :
 	void RecieveCoefficients(double _CoeTotal, double _CoeMain, double _CoeNeighbor, double _CoeCorner, int _nn);
 	void UpdateTanE();
 	void UpdateSurfaceJ();
-
-
 	void RecieveTangentialEField(std::vector<std::vector<std::complex<double>>> _Ex,std::vector<std::vector<std::complex<double>>> _Ey, int _Nx, int _Ny);
 	//void DrawCurrents();
-
 
 
 private: signals:
 	void SendValue(double _out);
 	void SendText(QString _Message);
+
+public: signals:
+	void SendFreq(double _freq);
 
 private:
 	void updatePaint();
@@ -72,17 +77,25 @@ private:
 	void CreateCutParas();
 	void ReadBasicParas();
 	void ReadDesignParas();
-	void ReadCutParas();	
+	void ReadCutParas();
+	void WriteAllParas();
+	void DrawSurfaceJ();
+	void DrawPowerRatio();
+	void DrawCut();
+	void OutputModel();
+	void OutputExc();
+	void OutputLattice();
 
 private:
 	//Ui::showDenisovClass ui;
-
+	bool calculated;
 	QPaintField *paintField;	//Plot Input Mode Field
 	QPaintField *paintCurrent;	//Plot Surface Current Distribution
 
 	QCustomPlot *PlotCurve;		//Plot Turbulence Curves
 	QCustomPlot *PlotPower;		//Plot PowerDistribution Curves;
 	QCustomPlot *DrawCurrent;	//Plot Induced Surface Currents;
+	QGroupBox *DrawLogo;
 
 	QLabel *Percent;
 	QLabel *Message;
@@ -90,10 +103,10 @@ private:
 	QGroupBox *Buttons;
 	QPushButton *btn1;	//SetBasic
 	QPushButton *btn2;	//SetDesign
-	QPushButton *btn3;	//SetCut
-	QPushButton *btn4;	//ComputeT1
-	QPushButton *btn5;	//ComputeT2
-	QPushButton *btn6;	//ComputeAll
+	QPushButton *btn3;	//RunCMT
+	QPushButton *btn4;	//SetCut
+	QPushButton *btn5;	//Save
+	QPushButton *btn6;	//Load
 
 	//Basic Parameters InterFace
 	QGroupBox *BasicParas;
@@ -138,10 +151,14 @@ private:
 	int n;
 	//for Drawing Mode Field
 	int Nx, Ny;
+	int N_spa;
 	//for Drawing Surface Current
 	int Nphi, Nheight, Sparse;
 	//Cut Height
 	double lcut;
+	//Cut Position
+	int phic;
+	double zcut;
 //design parameters
 	double delbeta1;
 	double delbeta2;
@@ -157,6 +174,7 @@ private:
 	double lc2;
 	double Hz;
 	double dz;
+	double dis;
 	int Nz;
 //Compute parasmeters
 
@@ -169,6 +187,11 @@ private:
 	QVector<double> PowerCorner;
 	QVector<double> ZAxis;
 
+	vector<vector<double>> SJ;
+
+	vector<double> EpsModel;
+
+	
 };
 
 #endif // SHOWFDTD_H

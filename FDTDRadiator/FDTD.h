@@ -83,6 +83,9 @@ public:
 	float* timeline;
 	int Nt;
 
+	//Model center, as well as the HuygensBox Center
+	float cx, cy, cz;
+
 	//Field unknowns: X- Y- Z- direction
 	float ds; 
 	float dx, dy, dz;
@@ -255,6 +258,7 @@ public:
 	//Set Excitation Port
 	void SetExcPort(int _Nz_exc, int _Nx_exc, int _Ny_exc, int _Px_exc, int Py_exc, complex<float>** _Ex_Port, complex<float>** _Ey_Port, complex<float>** _Hx_Port, complex<float>** _Hy_Port);
 	void SetupModel(int*** _EpsMap, float*** _Esig);
+	void SetupModel(float*** _Eps, float _cx, float _cy, float _cz);
 	void Judge();
 	void Update();
 	void UpdateE();
