@@ -386,9 +386,6 @@
     <ClCompile Include="Qt\src\QPaint2DField.cpp">
       <Filter>Source Files\Qt</Filter>
     </ClCompile>
-    <ClCompile Include="DenisovRadiator\CodeJin\Mathematical_Functions.cpp">
-      <Filter>Header Files\Denisov</Filter>
-    </ClCompile>
     <ClCompile Include="DenisovRadiator\CodeJin\qcustomplot.cpp">
       <Filter>Header Files\Denisov</Filter>
     </ClCompile>
@@ -460,6 +457,27 @@
     </ClCompile>
     <ClCompile Include="util\comUtil.cpp">
       <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="DenisovRadiator\HighOrderRadiator.cpp">
+      <Filter>Header Files\Denisov</Filter>
+    </ClCompile>
+    <ClCompile Include="DenisovRadiator\CodeJin\CRadiator.cpp">
+      <Filter>Header Files\Denisov</Filter>
+    </ClCompile>
+    <ClCompile Include="DenisovRadiator\CodeJin\FieldLJ.cpp">
+      <Filter>Header Files\Denisov</Filter>
+    </ClCompile>
+    <ClCompile Include="DenisovRadiator\CodeJin\OMTfunctions.cpp">
+      <Filter>Header Files\Denisov</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_WaveguideWidget.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_WaveguideWidget.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="Qt\src\WaveguideWidget.cpp">
+      <Filter>Source Files\Qt</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -558,6 +576,9 @@
     </CustomBuild>
     <CustomBuild Include="DenisovRadiator\showDenisov.h">
       <Filter>Header Files\Denisov</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Qt\include\WaveguideWidget.h">
+      <Filter>Header Files\Qt</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
@@ -696,9 +717,6 @@
     <ClInclude Include="Calculation\Correlation_Coefficient.h">
       <Filter>Header Files\Calculation</Filter>
     </ClInclude>
-    <ClInclude Include="DenisovRadiator\CodeJin\Mathematical_Functions.h">
-      <Filter>Header Files\Denisov</Filter>
-    </ClInclude>
     <ClInclude Include="DenisovRadiator\CodeJin\OMTfunctions.h">
       <Filter>Header Files\Denisov</Filter>
     </ClInclude>
@@ -713,6 +731,15 @@
     </ClInclude>
     <ClInclude Include="util\comUtil.h">
       <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="DenisovRadiator\HighOrderRadiator.h">
+      <Filter>Header Files\Denisov</Filter>
+    </ClInclude>
+    <ClInclude Include="DenisovRadiator\CodeJin\CRadiator.h">
+      <Filter>Header Files\Denisov</Filter>
+    </ClInclude>
+    <ClInclude Include="DenisovRadiator\CodeJin\FieldLJ.h">
+      <Filter>Header Files\Denisov</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
