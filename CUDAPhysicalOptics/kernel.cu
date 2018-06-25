@@ -59,7 +59,7 @@ kernel_SetZero(cuVector3* _d_p_in, float* _d_ds, cuComplexVector3* _d_J_in) {
 
 //Kernel 与 外调函数配对
 __global__ void	//包涵累加归约操作 有点麻烦，先将Block内的计算结果进行累加，然后每个Block的值存在一个数组的元素里。
-kernel_ZeroOrderJM2H(const cuComplex _coe, const float _k, const cuVector3* _d_p_in, const float* _d_ds, const cuComplexVector3* _d_J_in,
+kernel_ZeroOrderJM2H(const cuComplex _coe, const float _k, const cuVector3* _d_p_in, const float* _d_ds, const cuComplexVector3* _d_JM_in,
 	const cuVector3 _d_p_out, cuComplexVector3* _d_H_out_blocks) {
 	int i = blockDim.x * blockIdx.x + threadIdx.x;
 	int blockid = int(i / threadsPerBlock);
@@ -70,14 +70,14 @@ kernel_ZeroOrderJM2H(const cuComplex _coe, const float _k, const cuVector3* _d_p
 	__shared__ cuComplexVector3 BlockResults[threadsPerBlock];//用于存储块内计算完成的结果
 	cuVector3 R = cuVector3Sub(_d_p_out, _d_p_in[i]); //3	//输出位置到输入位置的矢量
 	float ds = _d_ds[i];	//输入位置的面积
-	cuComplexVector3 J = _d_J_in[i];	//输入电流
+	cuComplexVector3 JM = _d_JM_in[i];	//输入电流
 	float absR = cuVector3Abs(R);
 	float absR2 = absR*absR;	float absR3 = absR*absR2;
 	cuComplex cc = _coe;	//coe should be:
 	float kk = _k;
 
-	cuComplexVector3 CV1 = cuComplexVector3Crossfc(R, J);		CV1 = cuComplexVector3Crossfc(R, CV1);
-	cuComplexVector3 CV2 = J;
+	cuComplexVector3 CV1 = cuComplexVector3Crossfc(R, JM);		CV1 = cuComplexVector3Crossfc(R, CV1);
+	cuComplexVector3 CV2 = JM;
 	cuComplexVector3 result;
 	cuComplex item1;
 	cuComplex item2;
@@ -172,6 +172,83 @@ kernel_ZeroOrderJ2E(const cuComplex _coe, const float _k, const cuVector3* _d_p_
 		_d_E_out_blocks[blockid] = BlockResults[ii];//输出
 	}
 }
+
+
+__global__ void	//惠更斯面到场
+kernel_ZeroOrderJ22E(const cuComplex _coe_JM, const cuComplex _coe_J, const float _k, const cuVector3* _d_p_in, const float* _d_ds, const cuComplexVector3* _d_JM_in,
+	const cuComplexVector3* _d_J_in, const cuVector3 _d_p_out, cuComplexVector3* _d_E_out_blocks) {
+
+}
+
+__global__ void //惠更斯面到镜
+kernel_ZeroOrderJ22H(const cuComplex _coe_JM, const cuComplex _coe_J, const float _k, const cuVector3* _d_p_in, const float* _d_ds, const cuComplexVector3* _d_JM_in,
+	const cuComplexVector3* _d_J_in, const cuVector3 _d_p_out, cuComplexVector3* _d_H_out_blocks) {
+
+	int i = blockDim.x * blockIdx.x + threadIdx.x;
+	int blockid = int(i / threadsPerBlock);
+	//int shift = blockDim.x * blockIdx.x;
+	int ii = threadIdx.x;
+
+	//不选择了，直接全算，补余区域计算结果自然为0
+	__shared__ cuComplexVector3 BlockResults[threadsPerBlock];//用于存储块内计算完成的结果
+	cuVector3 R = cuVector3Sub(_d_p_out, _d_p_in[i]); //3	//输出位置到输入位置的矢量
+	float ds = _d_ds[i];	//输入位置的面积
+	cuComplexVector3 JM = _d_JM_in[i];	//输入磁流
+	cuComplexVector3 J = _d_J_in[i];	//输入电流
+	float absR = cuVector3Abs(R);
+	float absR2 = absR*absR;	float absR3 = absR*absR2;
+	cuComplex cc_jm = _coe_JM;	//coe should be:
+	cuComplex cc_j = _coe_J;	
+	float kk = _k;
+	//首先计算磁流部分
+	cuComplexVector3 CV1 = cuComplexVector3Crossfc(R, JM);		CV1 = cuComplexVector3Crossfc(R, CV1);
+	cuComplexVector3 CV2 = JM;
+	cuComplexVector3 result;
+	cuComplex item1;
+	cuComplex item2;
+	float kr = -kk*absR;
+	cuComplex iteme = make_cuComplex(cos(kr), sin(kr));
+	iteme = cuCmulfcf(iteme, ds);
+	item1 = cuCaddf(make_cuComplex(3 - kk*kk*absR2, 0), make_cuComplex(0, -3.0*kr));
+	item1 = cuCdivfcf(item1, absR2*absR3);
+	item1 = cuCmulf(cuCmulf(cc_jm,iteme),item1);
+	item2 = cuCaddf(make_cuComplex(float(-1), 0), make_cuComplex(0, kr));
+	item2 = cuCmulfcf(item2, float(2.0));
+	item2 = cuCmulf(cuCmulf(cc_jm, iteme),item2);
+	cuComplexVector3AddS(cuComplexVector3Mul(CV1, item1), cuComplexVector3Mul(CV2, item2), result);
+	//这里计算电流部分
+	CV1 = cuComplexVector3Crossfc(R, J);
+	item1 = cuCaddf(make_cuComplex(float(-1.0),0),make_cuComplex(0,kr));
+	item1 = cuCdivfcf(item1, absR3);
+	item1 = cuCmulf(cuCmulf(cc_j, iteme), item1);
+	//暂存结果
+	CV2 = cuComplexVector3Mul(CV1, item1);
+	result = cuComplexVector3Add(result, CV2);
+
+	//计算完成，下面需要进行累加 首先在共享内存内累加
+	BlockResults[ii] = result;
+	__syncthreads();//进行至此进行同步，一个块内所有线程进行同步
+
+					//if (ii < 128) { BlockResults[ii] = cuComplexVector3Add(BlockResults[ii], BlockResults[ii + 128]); }
+					//__syncthreads();//进行至此进行同步，一个块内所有线程进行同步
+	if (ii < 64) { BlockResults[ii] = cuComplexVector3Add(BlockResults[ii], BlockResults[ii + 64]); }
+	__syncthreads();//进行至此进行同步，一个块内所有线程进行同步
+	if (ii < 32) { BlockResults[ii] = cuComplexVector3Add(BlockResults[ii], BlockResults[ii + 32]); }
+	__syncthreads();//进行至此进行同步，一个块内所有线程进行同步
+	if (ii < 16) { BlockResults[ii] = cuComplexVector3Add(BlockResults[ii], BlockResults[ii + 16]); }
+	__syncthreads();//进行至此进行同步，一个块内所有线程进行同步
+	if (ii < 8) { BlockResults[ii] = cuComplexVector3Add(BlockResults[ii], BlockResults[ii + 8]); }
+	__syncthreads();//进行至此进行同步，一个块内所有线程进行同步
+	if (ii < 4) { BlockResults[ii] = cuComplexVector3Add(BlockResults[ii], BlockResults[ii + 4]); }
+	__syncthreads();//进行至此进行同步，一个块内所有线程进行同步
+	if (ii < 2) { BlockResults[ii] = cuComplexVector3Add(BlockResults[ii], BlockResults[ii + 2]); }
+	__syncthreads();//进行至此进行同步，一个块内所有线程进行同步
+	if (ii < 1) {
+		BlockResults[ii] = cuComplexVector3Add(BlockResults[ii], BlockResults[ii + 1]);
+		_d_H_out_blocks[blockid] = BlockResults[ii];//输出
+	}
+}
+
 
 int RunJM2H(float _freq,int _NumSource, float* _px_in, float* _py_in, float* _pz_in,
 	float* _ds_in, cuComplex* Jmx_in, cuComplex* Jmy_in, cuComplex* Jmz_in,
@@ -459,4 +536,21 @@ int RunJ2E(float _freq, int _NumSource, float* _px_in, float* _py_in, float* _pz
 	delete[] h_J_in;	h_J_in = nullptr;
 
 	return 0;
+}
+
+//惠更斯面到镜面
+int RunJ22H(float _freq, int _NumSource, float* _px_in, float* _py_in, float* _pz_in,
+	float* _ds_in, cuComplex* Jmx_in, cuComplex* Jmy_in, cuComplex* Jmz_in,
+	cuComplex* Jx_in, cuComplex* Jy_in, cuComplex* Jz_in,
+	int _NumOut, float* _px_out, float* _py_out, float* _pz_out,
+	cuComplex* &Hx_out, cuComplex* &Hy_out, cuComplex* &Hz_out) {
+
+}
+//惠更斯面到场
+int RunJ22E(float _freq, int _NumSource, float* _px_in, float* _py_in, float* _pz_in,
+	float* _ds_in, cuComplex* Jmx_in, cuComplex* Jmy_in, cuComplex* Jmz_in,
+	cuComplex* Jx_in, cuComplex* Jy_in, cuComplex* Jz_in,
+	int _NumOut, float* _px_out, float* _py_out, float* _pz_out,
+	cuComplex* &Ex_out, cuComplex* &Ey_out, cuComplex* &Ez_out) {
+
 }

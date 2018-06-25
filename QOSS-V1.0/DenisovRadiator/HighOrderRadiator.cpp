@@ -1,4 +1,6 @@
 #include "../DenisovRadiator/HighOrderRadiator.h"
+#include "../DenisovRadiator/CodeJin/Mathematical_Functions_Jin.h"
+#include "../util/Constant_Var.h"
 
 HighOrderRadiator::HighOrderRadiator(void) {
 
@@ -13,6 +15,15 @@ void HighOrderRadiator::SetRadiatorBasicParas(double _Ra, double _zcut, double _
 	Zcut = _zcut;
 	phic = _phic*Pi/180;
 }
+//设置辐射器的基本参数-重载
+void HighOrderRadiator::SetRadiatorBasicParas(double _Ra, double _lcut, double _zcut, double _phic) {
+	Ra = _Ra;
+	Lcut = _lcut;
+	Zcut = _zcut;
+	phic = _phic*Pi / 180;
+}
+//设置
+
 //设置辐射器扰动参数
 void HighOrderRadiator::SetRadiatorTurbulenceParas(double _delBeta1, double _delBeta2, double _z0_1, double _z0_2, double _ls_1, double _ls_2, double _lc_1, double _lc_2, double _mag1, double _mag2) {
 	l1 = 1;
@@ -244,8 +255,8 @@ inline Vector3 HighOrderRadiator::DelTVec(double _phi, double _t) {
 	double sig2 = sig(mag2, z0_2, lc_2, ls_2, _t);
 	double dsig1 = dsig(mag1, z0_1, lc_1, ls_1, _t);
 	double dsig2 = dsig(mag2, z0_2, lc_2, ls_2, _t);
-	double dRt = dsig1*cos(delBeta1*_t - l1*_phi) + sig1*delBeta1*(-sin(delBeta1*_t - l1*_t))
-		       + dsig2*cos(delBeta2*_t - l2*_phi) + sig2*delBeta2*(-sin(delBeta2*_t - l2*_t));
+	double dRt = dsig1*cos(delBeta1*_t - l1*_phi) + sig1*delBeta1*(-sin(delBeta1*_t - l1*_phi))
+		       + dsig2*cos(delBeta2*_t - l2*_phi) + sig2*delBeta2*(-sin(delBeta2*_t - l2*_phi));
 	result.set( dRt*cos(_phi),
 				dRt*sin(_phi),
 				1);
@@ -264,8 +275,8 @@ inline Vector3 HighOrderRadiator::Normal(double _phi, double _t) {
 	double dsig1 = dsig(mag1, z0_1, lc_1, ls_1, _t);
 	double dsig2 = dsig(mag2, z0_2, lc_2, ls_2, _t);
 	double dRp = sig1*sin(delBeta1*_t - l1*_phi)*l1 + sig2*sin(delBeta2*_t - l2*_phi)*l2;
-	double dRt = dsig1*cos(delBeta1*_t - l1*_phi) + sig1*delBeta1*(-sin(delBeta1*_t - l1*_t))
-		+ dsig2*cos(delBeta2*_t - l2*_phi) + sig2*delBeta2*(-sin(delBeta2*_t - l2*_t));
+	double dRt = dsig1*cos(delBeta1*_t - l1*_phi) + sig1*delBeta1*(-sin(delBeta1*_t - l1*_phi))
+		+ dsig2*cos(delBeta2*_t - l2*_phi) + sig2*delBeta2*(-sin(delBeta2*_t - l2*_phi));
 	
 	dPhi.set(dRp*cos(_phi) + Rr*(-sin(_phi)),  dRp*sin(_phi) + Rr*cos(_phi),  0);
 	dPhi.Normalization();
@@ -282,7 +293,7 @@ inline bool HighOrderRadiator::OnRadiatorSurface(double _phi, double _t) {
 	bool on;
 	_t = _t + Zcut;
 	//不在区域中
-	if (_t<0 || _t>Zcut + Lcut){on = false;}
+	if (_t< 0 || _t > Zcut + Lcut){on = false;}
 	//扰动+传播段
 	else if (_t <= Zcut) { on = true; }
 	else {//切口
@@ -298,3 +309,105 @@ inline bool HighOrderRadiator::OnRadiatorSurface(double _phi, double _t) {
 	return on;
 }
 
+//XD添加,返回Denisov辐射器的反射点
+bool HighOrderRadiator::CalculateReflectionPoint(Vector3 StartPoint, Vector3 IncidentVector, Vector3 &ReflectionPoint)
+{
+	if (IncidentVector.Length() == 0)
+		return false;//光线方向向量不能为0
+
+	IncidentVector.Normalization();//归一化
+								   //找到射线传播的最长距离，俯视角度传播的最长长度为2R
+	Vector3 Nz = (0, 0, 1.0);//定义Z方向向量，此处默认波导传播方向是+Z方向
+	double Max_Length = 2 * Ra / sin(acos(IncidentVector.Dot(Nz)));//射线单次传播最长的长度g
+
+	int LoopNumber = 201;//单次迭代过程的步数
+	int LoopTimes = 5;//迭代次数
+	double Gap = Max_Length / (LoopNumber - 1);//定义初始化迭代间隔
+
+	for (int i = LoopTimes; i >= 0; i--)
+	{
+		vector <Vector3> P(LoopNumber, Vector3(0, 0, 0));
+		vector <double> _Phi(LoopNumber, 0);
+		vector <double> _T(LoopNumber, 0);
+		vector <double> delta(LoopNumber, 0);
+		for (int j = 0; j <LoopNumber; j++)
+		{
+			P[j] = StartPoint + IncidentVector*j*Gap;
+			_Phi[j] = atan2(P[j].y, P[j].x);
+			//由于金铭定义的角度范围是0到360，因此需要做一个小调整
+			if (_Phi[j] < 1.0e-8) _Phi[j] = _Phi[j] + 2.0 * Pi;
+			_T[j] = P[j].z;
+			delta[j] = (P[j] - Position(_Phi[j], _T[j])).Length();//求出各个点与辐射器对应面上点的差值
+		}
+
+		//找交点
+		for (int j = 0; j < LoopNumber - 2; j++)
+		{
+			if ((delta[j + 1] <= delta[j]) & (delta[j + 1] <= delta[j + 2]))
+			{
+				ReflectionPoint = P[j + 1];//得到本轮的最合适的反射点
+				StartPoint = P[j];//更新起始点
+				Gap = 2 * Gap / (LoopNumber - 1);//更新迭代间隔
+				//这里是不是应该有个跳出的函数？
+			}
+		}
+	}
+
+	return true;
+}
+
+//用于设定端口光线描述的参数
+void HighOrderRadiator::SetModeParas(double _freq, double _m, double _n, double _Ra, double _zcut) {
+	frequency = _freq;
+	m = _m;
+	n = _n;
+	Ra = _Ra;
+	Zcut = _zcut;
+}
+
+//返回辐射器入射端口处的光线
+int HighOrderRadiator::GetModeRays(vector<Vector3> &_pos, vector<Vector3> &_dir, int _Nr, int _Nphi) {
+	_pos.resize(_Nr*_Nphi * 2);
+	_dir.resize(_Nr*_Nphi * 2);
+
+	double Chimn; Chimn = rootdbessel(m, n);
+	Rc = Ra*(m / Chimn);
+	
+	//Vector3 N0; 
+	vector<double> pos_R;		pos_R.resize(_Nr);	
+	vector<double> pos_Phi;		pos_Phi.resize(_Nphi);
+	for (int r = 0; r < _Nr; r++) {		pos_R[r] = (r + 0.5)*(Ra - Rc) / _Nr + Rc;	}
+	for (int p = 0; p < _Nphi; p++) {	pos_Phi[p] = (p + 0.5) * 2 * Pi / _Nphi;	}
+
+	//波数
+	double lambda = C_Speed / frequency;
+	double k0 = 2 * Pi / lambda;
+	double kr = Chimn / Ra;
+	double kz = sqrt(k0*k0 - kr*kr);
+
+	for (int r = 0; r < _Nr; r++) {
+		double rr = pos_R[r];
+		
+		Vector3 N0;
+		N0.set(-kr*sqrt(1 - m*m / kr / kr / rr / rr),	//Er
+			m / rr,							//Ephi
+			kz);							//Ez
+		
+		for (int p = 0; p < _Nphi; p++) {
+			double pp = pos_Phi[p];
+			//方向
+			_dir[p + r*_Nphi].set(	N0.x*cos(pp) - N0.y*sin(pp),				//x
+									N0.x*sin(pp) + N0.y*cos(pp),				//y
+									N0.z);				//z
+			_dir[p + r*_Nphi + _Nphi*_Nr].set(	-N0.x*cos(pp) - N0.y*sin(pp),
+												-N0.x*sin(pp) + N0.y*cos(pp),
+												N0.z);
+			//位置
+			_pos[p + r*_Nphi].set(rr*cos(pp), rr*sin(pp), -Zcut);
+			_pos[p + r*_Nphi + _Nphi*_Nr].set(rr*cos(pp), rr*sin(pp), -Zcut);
+
+		}
+	}
+
+	return 0;
+}
