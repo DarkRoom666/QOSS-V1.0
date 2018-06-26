@@ -479,6 +479,9 @@
     <ClCompile Include="Qt\src\WaveguideWidget.cpp">
       <Filter>Source Files\Qt</Filter>
     </ClCompile>
+    <ClCompile Include="VTK\src\WaveguideRadiator.cpp">
+      <Filter>Source Files\VTK</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="mainwindow.h">
@@ -740,6 +743,9 @@
     </ClInclude>
     <ClInclude Include="DenisovRadiator\CodeJin\FieldLJ.h">
       <Filter>Header Files\Denisov</Filter>
+    </ClInclude>
+    <ClInclude Include="VTK\include\WaveguideRadiator.h">
+      <Filter>Header Files\VTK</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
