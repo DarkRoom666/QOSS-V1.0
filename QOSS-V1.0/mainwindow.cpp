@@ -1327,6 +1327,7 @@ void mainWindow::toReceiveGaussian(int caseIndex)
 		soucreFieldTreeItem->addChild(temPtr->getTree());
 		myData->setSourceField(temPtr);
 		toReceiveGaussian(0);
+		//temPtr->save("./test");
 		isExistenceOpenWin = false;
 	}
 	else if (0 == caseIndex)// µã»÷È¡Ïû

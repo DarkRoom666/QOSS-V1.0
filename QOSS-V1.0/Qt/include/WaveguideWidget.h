@@ -43,7 +43,8 @@ namespace  userInterface {
 		void on_rowComboBox(int);
 		void on_sourcePathBtn();
 		void on_OK1Btn();
-
+		void on_finishBtn();
+		void on_defaultBtn();
 
 	private:
 		QVTKWidget widget; // vtk ÏÔÊ¾´°¿Ú
@@ -97,6 +98,9 @@ namespace  userInterface {
 
 		QLineEdit * UNumLineEidt;
 		QLineEdit * VNumLineEidt;
+
+		QPushButton * defaultBtn;
+		QPushButton * finishBtn;
 
 		int MirrorNum;
 

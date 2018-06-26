@@ -66,8 +66,8 @@ public:
 	vtkSmartPointer<vtkImageActor> getActor() const;
 	vtkSmartPointer<vtkActor> getActor3D() const;
 
-	double getWidth() const { return data[7]; }
-	double getDepth() const { return data[8]; }
+	double getWidth() const { return data[0]; }
+	double getDepth() const { return data[1]; }
 
 	void save(const std::string &fileName) const;
 
