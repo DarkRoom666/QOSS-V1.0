@@ -11,8 +11,11 @@
 #include<cstdio>
 #include<cstdlib>
 #include<complex>
-#include"../DenisovRadiator/CodeJin/GEMS_Memory.h"
-#include"../DenisovRadiator/CodeJin/Global_Vars.h"
+//#include"../DenisovRadiator/CodeJin/GEMS_Memory.h"
+//#include"../DenisovRadiator/CodeJin/Global_Vars.h"
+
+#include "../FDTDRadiator/GEMS_Memory.h"
+#include "../FDTDRadiator/Global_Vars.h"
 
 using namespace::std;
 

@@ -340,12 +340,12 @@ void Field::calActor()
 		break;
 	}
 
-	for (int i = 0; i < N_width; i++)
-		for (int j = 0; j < M_depth; j++)
+	for (int j = 0; j < M_depth; j++)
+		for (int i = 0; i < N_width; i++)
 		{
 			double tempD;
 			complex<double> temp;
-			temp = (*tempEH)[j][i];
+			temp = (*tempEH)[i][j];
 
 			if (isPhs)
 			{

@@ -77,7 +77,6 @@ WaveguideWidget::WaveguideWidget(QWidget *parent)
 	okBtn = new QPushButton(tr("OK"));
 	connect(okBtn, SIGNAL(clicked()), this, SLOT(on_OK1Btn()));
 
-
 	//QGridLayout * layoutA = new QGridLayout;
 	//layoutA->addWidget(numBaseLabel, 0, 0);
 	//layoutA->addWidget(numBaseComboBox, 0, 1);
@@ -114,8 +113,8 @@ WaveguideWidget::WaveguideWidget(QWidget *parent)
 	// 
 	columnGapLabel = new QLabel(tr("column gap"));
 	rowGapLabel = new QLabel(tr("row gap"));
-	columnGapLineEdit = new QLineEdit;
-	rowGapLineEdit = new QLineEdit;
+	columnGapLineEdit = new QLineEdit(tr("0"));
+	rowGapLineEdit = new QLineEdit(tr("0"));
 
 	QGridLayout * layout2 = new QGridLayout;
 	layout2->addWidget(numBaseLabel, 0, 0);
@@ -126,7 +125,7 @@ WaveguideWidget::WaveguideWidget(QWidget *parent)
 	layout2->addWidget(rowGapLineEdit, 2, 1);
 
 	layoutGroupBox = new QGroupBox;
-	layoutGroupBox->setTitle(tr("Layout (unit: wavelength)"));
+	layoutGroupBox->setTitle(tr("Layout (unit: /ds)"));
 	layoutGroupBox->setLayout(layout2);
 
 	//
@@ -153,11 +152,20 @@ WaveguideWidget::WaveguideWidget(QWidget *parent)
 	unitGroupBox->setTitle(tr("Each unit"));
 	unitGroupBox->setLayout(layout3);
 
+	defaultBtn = new QPushButton(tr("default"));
+	finishBtn = new QPushButton(tr("finish"));
+	QGridLayout * layout4 = new QGridLayout;
+	layout4->addWidget(defaultBtn, 0, 0);
+	layout4->addWidget(finishBtn, 0, 1);
+
 	QVBoxLayout * rigthlayout = new QVBoxLayout(this);
 	rigthlayout->addWidget(baseGroupBox);
 	rigthlayout->addWidget(layoutGroupBox);
 	rigthlayout->addWidget(unitGroupBox);
+	rigthlayout->addLayout(layout4);
 
+	connect(finishBtn, SIGNAL(clicked()), this, SLOT(on_finishBtn()));
+	connect(defaultBtn, SIGNAL(clicked()), this, SLOT(on_defaultBtn()));
 
 	rWidget = new QWidget();
 	rWidget->setLayout(rigthlayout);
@@ -236,9 +244,44 @@ void userInterface::WaveguideWidget::on_OK1Btn()
 	int beginY = StartNumLineEidt->text().toInt();
 	int beginX = StartNumColumnEidt->text().toInt();
 
-	waveguideRadiator->setBasePara(fileAddress, N_width, M_depth, beginY, beginX, ds, isAmPhs);
+	waveguideRadiator->setBasePara(fileAddress, N_width, M_depth, beginY-1, beginX-1, ds, isAmPhs);
 	waveguideRadiator->readData();
+	waveguideRadiator->setEachUnit(amVec, phsVec);
+	waveguideRadiator->genField(field);
+	field->updateData();
+	renderer->AddActor(field->getActor());
+
+	auto window = widget.GetRenderWindow();
+	window->Render();
 	
+}
+
+void userInterface::WaveguideWidget::on_finishBtn()
+{
+	double colData = amLineEdit->text().toDouble();
+	double rowData = phsLineEdit->text().toDouble();
+	amVec[rowIndex][colIndex] = colData;
+	phsVec[rowIndex][colIndex] = rowData;
+
+	int gapCol = columnGapLineEdit->text().toInt();
+	int gapRow = rowGapLineEdit->text().toInt();
+	int numNN = numBaseComboBox->currentIndex() + 1;
+	waveguideRadiator->setLayout(gapCol, gapRow, numNN);
+	waveguideRadiator->setEachUnit(amVec, phsVec);
+	waveguideRadiator->genField(field);
+	field->updateData();
+	//renderer->AddActor(field->getActor());
+
+	auto window = widget.GetRenderWindow();
+	window->Render();
+}
+
+void userInterface::WaveguideWidget::on_defaultBtn()
+{
+	numBaseComboBox->setCurrentIndex(2); // 会自动调用 on_numBaseComboBox
+	columnGapLineEdit->setText(tr("0"));
+	rowGapLineEdit->setText(tr("0"));
+	on_finishBtn();
 }
 
 void WaveguideWidget::on_numBaseComboBox(int num)
@@ -274,6 +317,8 @@ void WaveguideWidget::on_numBaseComboBox(int num)
 	connect(columnComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(on_columnComboBox(int)));
 	connect(rowComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(on_rowComboBox(int)));
 
+	rowIndex = 0;
+	colIndex = 0;
 }
 
 

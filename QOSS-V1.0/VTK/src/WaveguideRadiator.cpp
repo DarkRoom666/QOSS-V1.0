@@ -10,6 +10,10 @@ WaveguideRadiator::WaveguideRadiator()
     isAmPhs = true;
 	beginY = 0;
 	beginX = 0;
+	gapCol = 0; 
+	gapRow = 0;
+	numNN = 1;
+
 }
 
 WaveguideRadiator::~WaveguideRadiator()
@@ -38,10 +42,7 @@ void WaveguideRadiator::readData()
 			tempLine >> a1 >> p1 >> a2 >> p2;
 			if (isAmPhs)
 			{
-				p1 += data[3];
-				a1 *= data[2];
-				p2 += data[3];
-				a2 *= data[2];
+
 				Ex_unit[i][j] = complex<double>(a1*cos(p1 / 180 * Pi),
 					a1*sin(p1 / 180 * Pi));
 				Ey_unit[i][j] = complex<double>(a2*cos(p2 / 180 * Pi),
@@ -49,10 +50,8 @@ void WaveguideRadiator::readData()
 			}
 			else
 			{
-				Ex_unit[i][j] = data[2] * complex<double>(
-					a1 * cos(data[3] / 180 * Pi), p1 * sin(data[3] / 180 * Pi));
-				Ey_unit[i][j] = data[2] * complex<double>(
-					a2 * cos(data[3] / 180 * Pi), p2 * sin(data[3] / 180 * Pi));
+				Ex_unit[i][j] = complex<double>(a1, p1);
+				Ey_unit[i][j] = complex<double>(a2, p2);
 			}
 
 		}
@@ -71,6 +70,13 @@ void WaveguideRadiator::setBasePara(const std::string& _fileAddress, int _N_widt
 	beginX = _beginX;
 	isAmPhs = _isAmPhs;
 	ds = _ds;
+	Ex_unit.resize(N_width);
+	Ey_unit.resize(N_width);
+	for (int i = 0; i < N_width; i++)
+	{
+		Ex_unit[i].resize(M_depth);
+		Ey_unit[i].resize(M_depth);
+	}
 }
 
 void WaveguideRadiator::setLayout(int _gapCol, int _gapRow, int _numNN)
@@ -123,14 +129,14 @@ void WaveguideRadiator::genField(Field* field)
 
 	int indexI = 0;
 	int indexJ = 0;
-	for (int x = 0; x < N; ++x)
-		for (int y = 0; y < M; ++y)
+	for (int x = 0; x < numNN; ++x)
+		for (int y = 0; y < numNN; ++y)
 		{
-			for (int i = 0; i < N; ++i)
-				for (int j = 0; j < M; ++j)
+			for (int i = 0; i < N_width; ++i)
+				for (int j = 0; j < M_depth; ++j)
 				{
-					indexI = i + indexI * (N_width + gapRow);
-					indexJ = j + indexJ * (M_depth + gapCol);
+					indexI = i + x * (N_width + gapRow);
+					indexJ = j + y * (M_depth + gapCol);
 
 					Ex[indexI][indexJ] = amVec[x][y] * complex<double>(
 						Ex_unit[i][j].real() * cos(phsVec[x][y] / 180 * Pi),
@@ -144,7 +150,7 @@ void WaveguideRadiator::genField(Field* field)
 
 
 	field->setNM(N, M);
-	field->setDs(ds);
+	field->setPlane(GraphTrans(), ds);
 	field->setIsSource(true);
 	field->setField(Ex, Ey);
 }
