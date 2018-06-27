@@ -25,6 +25,9 @@
     <ClCompile Include="RayTracing.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="HuygensBoxData.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Constant_Val.h">
@@ -67,6 +70,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="GEMS_Memory.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="HuygensBoxData.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

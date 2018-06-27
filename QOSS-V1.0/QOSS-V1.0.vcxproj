@@ -1139,6 +1139,12 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CUDADLL\CUDADLL.vcxproj">
+      <Project>{2428086a-1640-4655-ad9d-7c8e76ecbe12}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\CUDAPhysicalOptics\CUDAPhysicalOptics.vcxproj">
+      <Project>{025fa5c9-d924-4ddf-b104-1f4f24876e39}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\FDTDRadiator\FDTDRadiator.vcxproj">
       <Project>{96e692d8-718e-410f-96bd-dc8e8b00d43a}</Project>
     </ProjectReference>

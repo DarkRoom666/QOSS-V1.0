@@ -27,7 +27,7 @@ public:
 private:
 
 public:
-	Initial(void);
+	//Initial(void);
 	
 
 };

@@ -86,6 +86,40 @@ CUDAPOCalculation::~CUDAPOCalculation() {
 
 }
 
+void CUDAPOCalculation::cleaninput(void) {
+	if (Jx_in) { delete[] Jx_in;		Jx_in = nullptr; }
+	if (Jy_in) { delete[] Jy_in;		Jy_in = nullptr; }
+	if (Jz_in) { delete[] Jz_in;		Jz_in = nullptr; }
+
+	if (Jmx_in) { delete[] Jmx_in;	Jmx_in = nullptr; }
+	if (Jmy_in) { delete[] Jmy_in;	Jmy_in = nullptr; }
+	if (Jmz_in) { delete[] Jmz_in;	Jmz_in = nullptr; }
+
+	if (px_in) { delete[] px_in;		px_in = nullptr; }
+	if (py_in) { delete[] py_in;		py_in = nullptr; }
+	if (pz_in) { delete[] pz_in;		pz_in = nullptr; }
+
+	if (nx_in) { delete[] nx_in;		nx_in = nullptr; }
+	if (ny_in) { delete[] ny_in;		ny_in = nullptr; }
+	if (nz_in) { delete[] nz_in;		nz_in = nullptr; }
+
+	if (ds_in) { delete[] ds_in;		ds_in = nullptr; }
+}
+
+void CUDAPOCalculation::cleanoutput(void) {
+	if (px_out) { delete[] px_out;	px_out = nullptr; }
+	if (py_out) { delete[] py_out;	py_out = nullptr; }
+	if (pz_out) { delete[] pz_out;	pz_out = nullptr; }
+
+	if (Ex_out) { delete[] Ex_out;	Ex_out = nullptr; }
+	if (Ey_out) { delete[] Ey_out;	Ey_out = nullptr; }
+	if (Ez_out) { delete[] Ez_out;	Ez_out = nullptr; }
+
+	if (Hx_out) { delete[] Hx_out;	Hx_out = nullptr; }
+	if (Hy_out) { delete[] Hy_out;	Hy_out = nullptr; }
+	if (Hz_out) { delete[] Hz_out;	Hz_out = nullptr; }
+}
+
 void CUDAPOCalculation::setFrequency(double _freq) {
 	CUDAPOCalculation::freq = float(_freq);
 }
@@ -164,7 +198,6 @@ void CUDAPOCalculation::setOutputAperture(Vector3 _u, Vector3 _v, Vector3 _posce
 
 //设置作为输入的STL及场结果
 void CUDAPOCalculation::setSTLCurrentSourceZeroOrder(void* _polyData, vector<complex<double>> _Hx, vector<complex<double>> _Hy, vector<complex<double>> _Hz) {
-
 	vtkPolyData* polyData = (vtkPolyData*)(_polyData);
 	//源点数目
 	numSource = polyData->GetNumberOfCells();
@@ -293,6 +326,48 @@ void CUDAPOCalculation::setPlaneApertureEField_D(vector<vector<complex<double>>>
 	}
 }
 
+void CUDAPOCalculation::setHuygensCurrentInput(vector<complex<float>>_Jx,
+												vector<complex<float>>_Jy,
+												vector<complex<float>>_Jz,
+												vector<complex<float>>_Jmx,
+												vector<complex<float>>_Jmy,
+												vector<complex<float>>_Jmz) 
+{
+	numSource = _Jx.size();
+	Jx_in = new cuComplex[numSource];
+	Jy_in = new cuComplex[numSource];
+	Jz_in = new cuComplex[numSource];
+	Jmx_in = new cuComplex[numSource];
+	Jmy_in = new cuComplex[numSource];
+	Jmz_in = new cuComplex[numSource];
+	for (int i = 0; i < numSource; i++) {
+		Jx_in[i] = make_cuComplex(_Jx[i].real(), _Jx[i].imag());
+		Jy_in[i] = make_cuComplex(_Jy[i].real(), _Jy[i].imag());
+		Jz_in[i] = make_cuComplex(_Jz[i].real(), _Jz[i].imag());
+		Jmx_in[i] = make_cuComplex(_Jmx[i].real(), _Jmx[i].imag());
+		Jmy_in[i] = make_cuComplex(_Jmy[i].real(), _Jmy[i].imag());
+		Jmz_in[i] = make_cuComplex(_Jmz[i].real(), _Jmz[i].imag());
+	}
+}
+
+void CUDAPOCalculation::setHuygensPosInput(vector<float> _pxin,
+										   vector<float> _pyin,
+	                                       vector<float> _pzin,
+	                                       vector<float> _dssin) 
+{
+	numSource = _pxin.size();
+	px_in = new float[numSource];
+	py_in = new float[numSource];
+	pz_in = new float[numSource];
+	ds_in = new float[numSource];
+	for (int i = 0; i < numSource; i++) {
+		px_in[i] = _pxin[i];
+		py_in[i] = _pyin[i];
+		pz_in[i] = _pzin[i];
+		ds_in[i] = _dssin[i];
+	}
+}
+
 //从场分布计算表面电流
 int CUDAPOCalculation::calculateF2S() {
 	//这是在kernal.cu里写的调用函数
@@ -303,6 +378,19 @@ int CUDAPOCalculation::calculateS2F() {
 	//这是在kernal里写的函数
 	return RunJ2E(freq, numSource, px_in, py_in, pz_in, ds_in, Jx_in, Jy_in, Jz_in, numOut, px_out, py_out, pz_out, Ex_out, Ey_out, Ez_out);
 }
+//从惠更斯盒子外推电场分布
+int CUDAPOCalculation::calculateHuygens2E() {
+	return RunJ22E(freq, numSource, px_in, py_in, pz_in,ds_in,
+					Jmx_in, Jmy_in, Jmz_in, Jx_in, Jy_in, Jz_in,
+					numOut,px_out,py_out,pz_out,Ex_out,Ey_out,Ez_out);
+}
+//从惠更斯盒子外推磁场分布
+int CUDAPOCalculation::calculateHuygens2H(){
+	return RunJ22H(freq, numSource, px_in, py_in, pz_in, ds_in,
+					Jmx_in, Jmy_in, Jmz_in, Jx_in, Jy_in, Jz_in,
+					numOut, px_out, py_out, pz_out, Hx_out, Hy_out, Hz_out);
+}
+
 
 //获取输出结果输出 口面场分布
 void CUDAPOCalculation::getOutApertureE(complex<double>** &_Eu, complex<double>** &_Ev) {

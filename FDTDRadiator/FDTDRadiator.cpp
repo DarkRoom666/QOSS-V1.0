@@ -386,6 +386,10 @@ void FDTDRadiator::runCommonFDTD(void) {
 			returnInt(2, user);//ÕÍ≥…FDTD º∆À„
 		}
 
+		Huygens.SetHuygensParas(FDTD.Nx_DFT, FDTD.Ny_DFT, FDTD.Nz_DFT, FDTD.dx, FDTD.dy, FDTD.dz, cx, cy, cz, Frequency);
+		Huygens.SetHuygensData(FDTD.HuygensBoxData, 0);
+
+
 	}
 	logfile.close();
 }

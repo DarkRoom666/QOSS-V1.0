@@ -9,6 +9,8 @@
 #include "Matrix4D.h"	//公用
 #include "Vector3D.h"	//公用
 #include <string>
+#include "HuygensBoxData.h"
+#include "../CUDAPhysicalOptics/CUDAPhysicalOptics.h"
 //注意这里不些引用
 
 using namespace std;
@@ -150,5 +152,6 @@ public:
 	int timemode; //0 single frequency computation; 1 multi-frequency computation
 	int huygensmode; //0 five faces huygens Box; 1. cylinder faces to be established
 
+	HuygensBox Huygens;
 };
 

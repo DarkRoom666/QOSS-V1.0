@@ -157,7 +157,7 @@
     <ClInclude Include="FDTDRadiator.h" />
     <ClInclude Include="GEMS_Memory.h" />
     <ClInclude Include="Global_Vars.h" />
-    <ClInclude Include="HuygensPropagate.h" />
+    <ClInclude Include="HuygensBoxData.h" />
     <ClInclude Include="Mathematical_Functions.h" />
     <ClInclude Include="Matrix4D.h" />
     <ClInclude Include="Position3D.h" />
@@ -171,12 +171,18 @@
     <ClCompile Include="ApertureRadiation.cpp" />
     <ClCompile Include="FDTD.cpp" />
     <ClCompile Include="FDTDRadiator.cpp" />
+    <ClCompile Include="HuygensBoxData.cpp" />
     <ClCompile Include="Mathematical_Functions.cpp" />
     <ClCompile Include="Matrix4D.cpp" />
     <ClCompile Include="Position3D.cpp" />
     <ClCompile Include="Radiator.cpp" />
     <ClCompile Include="SourceModeGenerationT.cpp" />
     <ClCompile Include="Vector3D.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CUDAPhysicalOptics\CUDAPhysicalOptics.vcxproj">
+      <Project>{025fa5c9-d924-4ddf-b104-1f4f24876e39}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

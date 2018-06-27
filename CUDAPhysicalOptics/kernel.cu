@@ -57,9 +57,20 @@ kernel_SetZero(cuVector3* _d_p_in, float* _d_ds, cuComplexVector3* _d_J_in) {
 	_d_J_in[i] = SetcuComplexVector3f(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 }
 
+__global__ void //对输入输出量进行清0
+kernel_SetZero4(cuVector3* _d_p_in, float* _d_ds, cuComplexVector3* _d_J_in, cuComplexVector3* _d_JM_in) {
+	int i = blockDim.x * blockIdx.x + threadIdx.x;
+	//int shift = blockDim.x * blockIdx.x;
+	int ii = threadIdx.x;
+	_d_p_in[i] = SetcuVector3(100, 100, 100);
+	_d_ds[i] = 0;
+	_d_J_in[i] = SetcuComplexVector3f(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+	_d_JM_in[i] = SetcuComplexVector3f(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+}
+
 //Kernel 与 外调函数配对
-__global__ void	//包涵累加归约操作 有点麻烦，先将Block内的计算结果进行累加，然后每个Block的值存在一个数组的元素里。
-kernel_ZeroOrderJM2H(const cuComplex _coe, const float _k, const cuVector3* _d_p_in, const float* _d_ds, const cuComplexVector3* _d_JM_in,
+__global__ void	//场到电流//包涵累加归约操作 有点麻烦，先将Block内的计算结果进行累加，然后每个Block的值存在一个数组的元素里。
+kernel_ZeroOrderJM2H(const cuComplex _coe_JM, const float _k, const cuVector3* _d_p_in, const float* _d_ds, const cuComplexVector3* _d_JM_in,
 	const cuVector3 _d_p_out, cuComplexVector3* _d_H_out_blocks) {
 	int i = blockDim.x * blockIdx.x + threadIdx.x;
 	int blockid = int(i / threadsPerBlock);
@@ -73,7 +84,7 @@ kernel_ZeroOrderJM2H(const cuComplex _coe, const float _k, const cuVector3* _d_p
 	cuComplexVector3 JM = _d_JM_in[i];	//输入电流
 	float absR = cuVector3Abs(R);
 	float absR2 = absR*absR;	float absR3 = absR*absR2;
-	cuComplex cc = _coe;	//coe should be:
+	cuComplex cc_jm = _coe_JM;	//coe should be:
 	float kk = _k;
 
 	cuComplexVector3 CV1 = cuComplexVector3Crossfc(R, JM);		CV1 = cuComplexVector3Crossfc(R, CV1);
@@ -83,11 +94,12 @@ kernel_ZeroOrderJM2H(const cuComplex _coe, const float _k, const cuVector3* _d_p
 	cuComplex item2;
 	float kr = -kk*absR;
 	cuComplex iteme = make_cuComplex(cos(kr), sin(kr));
-	iteme = cuCmulf(cuCmulfcf(iteme, ds), cc);
-	item1 = cuCaddf(make_cuComplex(3 - kk*kk*absR2, 0), make_cuComplex(0, -3.0*kr));
+	iteme = cuCmulf(cuCmulfcf(iteme, ds), cc_jm);
+	item1 = cuCaddf(make_cuComplex(3 - kk*kk*absR2, 0), make_cuComplex(0, -float(3.0)*kr));
 	item1 = cuCdivfcf(item1, absR2*absR3);
 	item1 = cuCmulf(item1, iteme);
-	item2 = cuCaddf(make_cuComplex(float(-1), 0), make_cuComplex(0, kr));
+	item2 = cuCaddf(make_cuComplex(float(1.0), 0), make_cuComplex(0, -kr));
+	item2 = cuCdivfcf(item2, absR3);
 	item2 = cuCmulfcf(item2, float(2.0));
 	item2 = cuCmulf(item2, iteme);
 	cuComplexVector3AddS(cuComplexVector3Mul(CV1, item1), cuComplexVector3Mul(CV2, item2), result);
@@ -115,8 +127,8 @@ kernel_ZeroOrderJM2H(const cuComplex _coe, const float _k, const cuVector3* _d_p
 	}
 }
 
-__global__ void
-kernel_ZeroOrderJ2E(const cuComplex _coe, const float _k, const cuVector3* _d_p_in, const float* _d_ds, const cuComplexVector3* _d_J_in,
+__global__ void//电流到场
+kernel_ZeroOrderJ2E(const cuComplex _coe_J, const float _k, const cuVector3* _d_p_in, const float* _d_ds, const cuComplexVector3* _d_J_in,
 	const cuVector3 _d_p_out, cuComplexVector3* _d_E_out_blocks) {
 	int i = blockDim.x * blockIdx.x + threadIdx.x;
 	int blockid = int(i / threadsPerBlock);
@@ -131,7 +143,7 @@ kernel_ZeroOrderJ2E(const cuComplex _coe, const float _k, const cuVector3* _d_p_
 	cuComplexVector3 J = _d_J_in[i];	//输入电流
 	float absR = cuVector3Abs(R);
 	float absR2 = absR*absR;	float absR3 = absR*absR2;
-	cuComplex cc = _coe;	//coe should be:
+	cuComplex cc_j = _coe_J;	//coe should be:
 	float kk = _k;
 
 	cuComplexVector3 CV1 = cuComplexVector3Crossfc(R, J);		CV1 = cuComplexVector3Crossfc(R, CV1);
@@ -141,11 +153,12 @@ kernel_ZeroOrderJ2E(const cuComplex _coe, const float _k, const cuVector3* _d_p_
 	cuComplex item2;
 	float kr = -kk*absR;
 	cuComplex iteme = make_cuComplex(cos(kr), sin(kr));
-	iteme = cuCmulf(cuCmulfcf(iteme, ds), cc);
+	iteme = cuCmulf(cuCmulfcf(iteme, ds), cc_j);
 	item1 = cuCaddf(make_cuComplex(3 - kk*kk*absR2, 0), make_cuComplex(0, -3.0*kr));
 	item1 = cuCdivfcf(item1, absR2*absR3);
 	item1 = cuCmulf(item1, iteme);
 	item2 = cuCaddf(make_cuComplex(float(1), 0), make_cuComplex(0, -kr));
+	item2 = cuCdivfcf(item2, absR3);
 	item2 = cuCmulfcf(item2, float(2.0));
 	item2 = cuCmulf(item2, iteme);
 	cuComplexVector3AddS(cuComplexVector3Mul(CV1, item1), cuComplexVector3Mul(CV2, item2), result);
@@ -177,7 +190,71 @@ kernel_ZeroOrderJ2E(const cuComplex _coe, const float _k, const cuVector3* _d_p_
 __global__ void	//惠更斯面到场
 kernel_ZeroOrderJ22E(const cuComplex _coe_JM, const cuComplex _coe_J, const float _k, const cuVector3* _d_p_in, const float* _d_ds, const cuComplexVector3* _d_JM_in,
 	const cuComplexVector3* _d_J_in, const cuVector3 _d_p_out, cuComplexVector3* _d_E_out_blocks) {
+	int i = blockDim.x * blockIdx.x + threadIdx.x;
+	int blockid = int(i / threadsPerBlock);
+	//int shift = blockDim.x * blockIdx.x;
+	int ii = threadIdx.x;
 
+	//不选择了，直接全算，补余区域计算结果自然为0
+	__shared__ cuComplexVector3 BlockResults[threadsPerBlock];//用于存储块内计算完成的结果
+	cuVector3 R = cuVector3Sub(_d_p_out, _d_p_in[i]); //3	//输出位置到输入位置的矢量
+	float ds = _d_ds[i];	//输入位置的面积
+	cuComplexVector3 JM = _d_JM_in[i];	//输入磁流
+	cuComplexVector3 J = _d_J_in[i];	//输入电流
+	float absR = cuVector3Abs(R);
+	float absR2 = absR*absR;	float absR3 = absR*absR2;
+	cuComplex cc_jm = _coe_JM;	//coe should be:
+	cuComplex cc_j = _coe_J;
+	float kk = _k;
+	//首先计算电流部分
+	cuComplexVector3 CV1 = cuComplexVector3Crossfc(R, J);		CV1 = cuComplexVector3Crossfc(R, CV1);
+	cuComplexVector3 CV2 = J;
+	cuComplexVector3 result;
+	cuComplex item1;
+	cuComplex item2;
+	float kr = -kk*absR;
+	cuComplex iteme = make_cuComplex(cos(kr), sin(kr));
+	iteme = cuCmulfcf(iteme, ds);
+	item1 = cuCaddf(make_cuComplex(3 - kk*kk*absR2, 0), make_cuComplex(0, -3.0*kr));
+	item1 = cuCdivfcf(item1, absR2*absR3);
+	item1 = cuCmulf(cuCmulf(cc_j, iteme), item1);
+	item2 = cuCaddf(make_cuComplex(float(1), 0), make_cuComplex(0, -kr));
+	item2 = cuCdivfcf(item2,absR3);
+	item2 = cuCmulfcf(item2, float(2.0));
+	item2 = cuCmulf(cuCmulf(cc_j, iteme), item2);
+	cuComplexVector3AddS(cuComplexVector3Mul(CV1, item1), cuComplexVector3Mul(CV2, item2), result);
+	//这里计算磁流部分
+	CV1 = cuComplexVector3Crosscf(JM, R);
+	item1 = cuCaddf(make_cuComplex(float(-1.0), 0), make_cuComplex(0, kr));
+	item1 = cuCdivfcf(item1, absR3);
+	item1 = cuCmulf(cuCmulf(cc_jm, iteme), item1);
+	//暂存结果
+	CV2 = cuComplexVector3Mul(CV1, item1);
+	//电流磁流部分相加
+	result = cuComplexVector3Add(result, CV2);
+
+	//计算完成，下面需要进行累加 首先在共享内存内累加
+	BlockResults[ii] = result;
+	__syncthreads();//进行至此进行同步，一个块内所有线程进行同步
+
+					//if (ii < 128) { BlockResults[ii] = cuComplexVector3Add(BlockResults[ii], BlockResults[ii + 128]); }
+					//__syncthreads();//进行至此进行同步，一个块内所有线程进行同步
+	if (ii < 64) { BlockResults[ii] = cuComplexVector3Add(BlockResults[ii], BlockResults[ii + 64]); }
+	__syncthreads();//进行至此进行同步，一个块内所有线程进行同步
+	if (ii < 32) { BlockResults[ii] = cuComplexVector3Add(BlockResults[ii], BlockResults[ii + 32]); }
+	__syncthreads();//进行至此进行同步，一个块内所有线程进行同步
+	if (ii < 16) { BlockResults[ii] = cuComplexVector3Add(BlockResults[ii], BlockResults[ii + 16]); }
+	__syncthreads();//进行至此进行同步，一个块内所有线程进行同步
+	if (ii < 8) { BlockResults[ii] = cuComplexVector3Add(BlockResults[ii], BlockResults[ii + 8]); }
+	__syncthreads();//进行至此进行同步，一个块内所有线程进行同步
+	if (ii < 4) { BlockResults[ii] = cuComplexVector3Add(BlockResults[ii], BlockResults[ii + 4]); }
+	__syncthreads();//进行至此进行同步，一个块内所有线程进行同步
+	if (ii < 2) { BlockResults[ii] = cuComplexVector3Add(BlockResults[ii], BlockResults[ii + 2]); }
+	__syncthreads();//进行至此进行同步，一个块内所有线程进行同步
+	if (ii < 1) {
+		BlockResults[ii] = cuComplexVector3Add(BlockResults[ii], BlockResults[ii + 1]);
+		_d_E_out_blocks[blockid] = BlockResults[ii];//输出
+	}
 }
 
 __global__ void //惠更斯面到镜
@@ -209,16 +286,19 @@ kernel_ZeroOrderJ22H(const cuComplex _coe_JM, const cuComplex _coe_J, const floa
 	float kr = -kk*absR;
 	cuComplex iteme = make_cuComplex(cos(kr), sin(kr));
 	iteme = cuCmulfcf(iteme, ds);
-	item1 = cuCaddf(make_cuComplex(3 - kk*kk*absR2, 0), make_cuComplex(0, -3.0*kr));
+	//item1 = cuCaddf(make_cuComplex(3 - kk*kk*absR2, 0), make_cuComplex(0, -float(3.0)*kr));
+	item1 = make_cuComplex(3 - kk*kk*absR2,-float(3.0)*kr);
 	item1 = cuCdivfcf(item1, absR2*absR3);
 	item1 = cuCmulf(cuCmulf(cc_jm,iteme),item1);
-	item2 = cuCaddf(make_cuComplex(float(-1), 0), make_cuComplex(0, kr));
+	item2 = make_cuComplex(float(1.0), -kr);// cuCaddf(make_cuComplex(float(1.0), 0), make_cuComplex(0, -kr));
+	item2 = cuCdivfcf(item2, absR3);
 	item2 = cuCmulfcf(item2, float(2.0));
 	item2 = cuCmulf(cuCmulf(cc_jm, iteme),item2);
 	cuComplexVector3AddS(cuComplexVector3Mul(CV1, item1), cuComplexVector3Mul(CV2, item2), result);
 	//这里计算电流部分
 	CV1 = cuComplexVector3Crossfc(R, J);
-	item1 = cuCaddf(make_cuComplex(float(-1.0),0),make_cuComplex(0,kr));
+	//item1 = cuCaddf(make_cuComplex(float(-1.0),0),make_cuComplex(0,kr));
+	item1 = make_cuComplex(float(-1.0),kr);
 	item1 = cuCdivfcf(item1, absR3);
 	item1 = cuCmulf(cuCmulf(cc_j, iteme), item1);
 	//暂存结果
@@ -545,12 +625,324 @@ int RunJ22H(float _freq, int _NumSource, float* _px_in, float* _py_in, float* _p
 	int _NumOut, float* _px_out, float* _py_out, float* _pz_out,
 	cuComplex* &Hx_out, cuComplex* &Hy_out, cuComplex* &Hz_out) {
 
+	cudaDeviceReset;
+	cudaSetDevice(0);
+	FILE* cudalog;
+	cudalog = fopen("./cudalog_calculationJ22H.txt", "w");
+	fprintf(cudalog, "This is log file for Cuda Calculation \n");
+	fclose(cudalog); cudalog = fopen("./cudalog_calculationJ22H.txt", "a");
+	cudaError_t err = cudaSuccess;
+
+	int NumSource = _NumSource;
+	//多少个Block
+	int blocksPerGrid = (NumSource + threadsPerBlock - 1) / threadsPerBlock;
+	//在申请GPU内存时自动补余
+	int NumMalloc = blocksPerGrid*threadsPerBlock;
+
+	//define Host Memory - 输入
+	cuVector3* h_p_in = nullptr;			h_p_in = new cuVector3[NumSource];
+	float* h_ds_in = nullptr;				h_ds_in = new float[NumSource];
+	cuComplexVector3* h_J_in = nullptr;		h_J_in = new cuComplexVector3[NumSource];
+	cuComplexVector3* h_JM_in = nullptr;	h_JM_in = new cuComplexVector3[NumSource];
+
+	for (int i = 0; i < NumSource; i++) {
+		h_p_in[i] = SetcuVector3(_px_in[i], _py_in[i], _pz_in[i]);
+		h_ds_in[i] = _ds_in[i];
+		h_J_in[i] = SetcuComplexVector3c(Jx_in[i], Jy_in[i], Jz_in[i]);
+		h_JM_in[i] = SetcuComplexVector3c(Jmx_in[i], Jmy_in[i], Jmz_in[i]);
+	}
+
+	//define and malloc GPU Memory, consider NumMalloc other than NumSource!!!!
+	cuVector3* d_p_in = NULL;		err = cudaMalloc((void**)&d_p_in, sizeof(cuVector3)*NumMalloc);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to allocate device d_p_in!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+	float* d_ds_in = NULL;		err = cudaMalloc((void**)&d_ds_in, sizeof(float)*NumMalloc);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to allocate device d_ds_in!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+	cuComplexVector3* d_J_in = NULL;		err = cudaMalloc((void**)&d_J_in, sizeof(cuComplexVector3)*NumMalloc);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to allocate device d_J_in!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+	cuComplexVector3* d_JM_in = NULL;		err = cudaMalloc((void**)&d_JM_in, sizeof(cuComplexVector3)*NumMalloc);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to allocate device d_JM_in!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+
+	fprintf(cudalog, "First, CUDA kernel will launch %d blocks of %d threads for device Input values to Zero on GPU.\n", blocksPerGrid, threadsPerBlock);
+	fclose(cudalog); cudalog = fopen("./cudalog_calculationJ22H.txt", "a");
+	kernel_SetZero4 << < blocksPerGrid, threadsPerBlock >> >
+		(d_p_in, d_ds_in, d_J_in, d_JM_in);
+
+	//Copy Host Memory into GPU Memory. Notice!! Here should be NumSource
+	err = cudaMemcpy(d_p_in, h_p_in, sizeof(cuVector3)*NumSource, cudaMemcpyHostToDevice);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to copy memory from host h_p_in to device d_p_in!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+	err = cudaMemcpy(d_ds_in, h_ds_in, sizeof(float)*NumSource, cudaMemcpyHostToDevice);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to copy memory from host h_ds_in to device d_ds_in!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+	err = cudaMemcpy(d_J_in, h_J_in, sizeof(cuComplexVector3)*NumSource, cudaMemcpyHostToDevice);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to copy memory from host h_J_in to device d_J_in!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+	err = cudaMemcpy(d_JM_in, h_JM_in, sizeof(cuComplexVector3)*NumSource, cudaMemcpyHostToDevice);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to copy memory from host h_JM_in to device d_JM_in!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+
+	//Start Physical Optic Computations
+
+	//define CPU and GPU Memory for Buffer storing output results
+	//CPU
+	cuComplexVector3* h_H_out = nullptr;	h_H_out = new cuComplexVector3[blocksPerGrid];	//完成CPU端的申请
+																							//GPU
+	cuComplexVector3* d_H_out = NULL;		err = cudaMalloc((void**)&d_H_out, sizeof(cuComplexVector3)*blocksPerGrid);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to allocate device buff d_H_out!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+	err = cudaMemcpy(h_H_out, d_H_out, sizeof(cuComplexVector3)*blocksPerGrid, cudaMemcpyDeviceToHost);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to copy memory from device d_H_out to host h_H_out,  !\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+
+	int NumOut = _NumOut;
+
+	fprintf(cudalog, "Second, CUDA kernel will launch %d blocks of %d threads for Computing Huygens to Current PO.\n", blocksPerGrid, threadsPerBlock);
+	fclose(cudalog); cudalog = fopen("./cudalog_calculationJ22H.txt", "a");
+
+	//computation parameters
+	float freq = _freq;
+	float lambda = C_Speed / freq;
+	float k0 = 2 * Pi / lambda;
+	cuVector3 p_out;
+	//注意不同的流-场对，这个值不一样哦
+	cuComplex coe_JM;	coe_JM = make_cuComplex(0, 4 * Pi * 2 * Pi*freq*Mu0);
+	cuComplex coe_J;	coe_J = make_cuComplex(4 * Pi, 0);
+	coe_JM = cuCdivf(make_cuComplex(1.0, 0.0), coe_JM);
+	coe_J = cuCdivf(make_cuComplex(1.0, 0.0), coe_J);
+	cuComplexVector3 HResult;
+
+	for (int i = 0; i < NumOut; i++) {
+		p_out = SetcuVector3(_px_out[i], _py_out[i], _pz_out[i]);
+
+		kernel_ZeroOrderJ22H << < blocksPerGrid, threadsPerBlock >> >
+			(coe_JM, coe_J, k0, d_p_in, d_ds_in, d_JM_in, d_J_in, p_out, d_H_out);
+		//计算完成了，每个Block会完成计算出一个cuComplexVector3 的积分值，将其传回（多少个Block,这个数组就有多长）
+
+		err = cudaMemcpy(h_H_out, d_H_out, sizeof(cuComplexVector3)*blocksPerGrid, cudaMemcpyDeviceToHost);
+		if (err != cudaSuccess) {
+			fprintf(cudalog, "Failed to copy memory from device d_H_out to host h_H_out, at PO iteration step: %d !\n", i, cudaGetErrorString(err));
+			fclose(cudalog);
+			return EXIT_FAILURE;
+		}
+		//在CPU端对返回的H数组进行累加（GPU上做累加太累了）
+		HResult = SetcuComplexVector3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+		for (int j = 0; j < blocksPerGrid; j++) {
+			HResult = cuComplexVector3Add(HResult, h_H_out[j]);
+		}
+		//累加后返回磁场数据
+		Hx_out[i] = HResult.x;
+		Hy_out[i] = HResult.y;
+		Hz_out[i] = HResult.z;
+
+		if (i % 1000 == 0) {
+			fprintf(cudalog, "     CUDA kernel performs %d times of %d for Computing Huygens to Current PO.\n", i, NumOut, threadsPerBlock);
+			fclose(cudalog); cudalog = fopen("./cudalog_calculationJ22H.txt", "a");
+		}
+	}
+
+	//清空cudaArray
+	err = cudaFree(d_p_in);	err = cudaFree(d_ds_in);	err = cudaFree(d_J_in);		err = cudaFree(d_JM_in);
+	err = cudaFree(d_H_out);
+
+	delete[] h_H_out;	h_H_out = nullptr;
+	delete[] h_p_in;	h_p_in = nullptr;
+	delete[] h_ds_in;	h_ds_in = nullptr;
+	delete[] h_J_in;	h_J_in = nullptr;
+	delete[] h_JM_in;	h_JM_in = nullptr;
+
+	return 0;
 }
+
 //惠更斯面到场
 int RunJ22E(float _freq, int _NumSource, float* _px_in, float* _py_in, float* _pz_in,
 	float* _ds_in, cuComplex* Jmx_in, cuComplex* Jmy_in, cuComplex* Jmz_in,
 	cuComplex* Jx_in, cuComplex* Jy_in, cuComplex* Jz_in,
 	int _NumOut, float* _px_out, float* _py_out, float* _pz_out,
 	cuComplex* &Ex_out, cuComplex* &Ey_out, cuComplex* &Ez_out) {
+	cudaDeviceReset;
+	cudaSetDevice(0);
+	FILE* cudalog;
+	cudalog = fopen("./cudalog_calculationJ22E.txt", "w");
+	fprintf(cudalog, "This is log file for Cuda Calculation \n");
+	fclose(cudalog); cudalog = fopen("./cudalog_calculationJ22E.txt", "a");
+	cudaError_t err = cudaSuccess;
 
+	int NumSource = _NumSource;
+	//多少个Block
+	int blocksPerGrid = (NumSource + threadsPerBlock - 1) / threadsPerBlock;
+	//在申请GPU内存时自动补余
+	int NumMalloc = blocksPerGrid*threadsPerBlock;
+
+	//define Host Memory - 输入
+	cuVector3* h_p_in = nullptr;			h_p_in = new cuVector3[NumSource];
+	float* h_ds_in = nullptr;				h_ds_in = new float[NumSource];
+	cuComplexVector3* h_J_in = nullptr;		h_J_in = new cuComplexVector3[NumSource];
+	cuComplexVector3* h_JM_in = nullptr;	h_JM_in = new cuComplexVector3[NumSource];
+
+	for (int i = 0; i < NumSource; i++) {
+		h_p_in[i] = SetcuVector3(_px_in[i], _py_in[i], _pz_in[i]);
+		h_ds_in[i] = _ds_in[i];
+		h_J_in[i] = SetcuComplexVector3c(Jx_in[i], Jy_in[i], Jz_in[i]);
+		h_JM_in[i] = SetcuComplexVector3c(Jmx_in[i], Jmy_in[i], Jmz_in[i]);
+	}
+
+	//define and malloc GPU Memory, consider NumMalloc other than NumSource!!!!
+	cuVector3* d_p_in = NULL;		err = cudaMalloc((void**)&d_p_in, sizeof(cuVector3)*NumMalloc);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to allocate device d_p_in!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+	float* d_ds_in = NULL;		err = cudaMalloc((void**)&d_ds_in, sizeof(float)*NumMalloc);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to allocate device d_ds_in!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+	cuComplexVector3* d_J_in = NULL;		err = cudaMalloc((void**)&d_J_in, sizeof(cuComplexVector3)*NumMalloc);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to allocate device d_J_in!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+	cuComplexVector3* d_JM_in = NULL;		err = cudaMalloc((void**)&d_JM_in, sizeof(cuComplexVector3)*NumMalloc);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to allocate device d_J_in!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+
+	fprintf(cudalog, "First, CUDA kernel will launch %d blocks of %d threads for device Input values to Zero on GPU.\n", blocksPerGrid, threadsPerBlock);
+	fclose(cudalog); cudalog = fopen("./cudalog_calculationJ22E.txt", "a");
+	kernel_SetZero4 << < blocksPerGrid, threadsPerBlock >> >
+		(d_p_in, d_ds_in, d_J_in, d_JM_in);
+
+	//Copy Host Memory into GPU Memory. Notice!! Here should be NumSource
+	err = cudaMemcpy(d_p_in, h_p_in, sizeof(cuVector3)*NumSource, cudaMemcpyHostToDevice);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to copy memory from host h_p_in to device d_p_in!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+	err = cudaMemcpy(d_ds_in, h_ds_in, sizeof(float)*NumSource, cudaMemcpyHostToDevice);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to copy memory from host h_ds_in to device d_ds_in!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+	err = cudaMemcpy(d_J_in, h_J_in, sizeof(cuComplexVector3)*NumSource, cudaMemcpyHostToDevice);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to copy memory from host h_J_in to device d_J_in!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+	err = cudaMemcpy(d_JM_in, h_JM_in, sizeof(cuComplexVector3)*NumSource, cudaMemcpyHostToDevice);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to copy memory from host h_JM_in to device d_JM_in!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+
+	//Start Physical Optic Computations
+
+	//define CPU and GPU Memory for Buffer storing output results
+	//CPU
+	cuComplexVector3* h_E_out = nullptr;	h_E_out = new cuComplexVector3[blocksPerGrid];
+	//GPU
+	cuComplexVector3* d_E_out = NULL;		err = cudaMalloc((void**)&d_E_out, sizeof(cuComplexVector3)*blocksPerGrid);
+	if (err != cudaSuccess) {
+		fprintf(cudalog, "Failed to allocate device buff d_H_out!\n", cudaGetErrorString(err));
+		fclose(cudalog);
+		return EXIT_FAILURE;
+	}
+	int NumOut = _NumOut;
+
+	fprintf(cudalog, "Second, CUDA kernel will launch %d blocks of %d threads for Computing Huygens to Field PO.\n", blocksPerGrid, threadsPerBlock);
+	fclose(cudalog); cudalog = fopen("./cudalog_calculationJ22E.txt", "a");
+
+	//computation parameters
+	float freq = _freq;
+	float lambda = C_Speed / freq;
+	float k0 = 2 * Pi / lambda;
+	cuVector3 p_out;
+	//注意不同的流-场对，这个值不一样哦
+	cuComplex coe_J;	coe_J = make_cuComplex(0, 4 * Pi * 2 * Pi*freq*Eps0);
+	cuComplex coe_JM;	coe_JM = make_cuComplex(4 * Pi, 0);
+	coe_J = cuCdivf(make_cuComplex(1.0, 0.0), coe_J);
+	coe_JM = cuCdivf(make_cuComplex(1.0, 0.0), coe_JM);
+	cuComplexVector3 EResult;
+
+	for (int i = 0; i < NumOut; i++) {
+		p_out = SetcuVector3(_px_out[i], _py_out[i], _pz_out[i]);
+
+		kernel_ZeroOrderJ22E << < blocksPerGrid, threadsPerBlock >> >
+			(coe_JM, coe_J, k0, d_p_in, d_ds_in, d_JM_in, d_J_in, p_out, d_E_out);
+		//计算完成了，每个Block会完成计算出一个cuComplexVector3 的积分值，将其传回（多少个Block,这个数组就有多长）
+		err = cudaMemcpy(h_E_out, d_E_out, sizeof(cuComplexVector3)*blocksPerGrid, cudaMemcpyDeviceToHost);
+		if (err != cudaSuccess) {
+			fprintf(cudalog, "Failed to copy memory from device d_H_out to host h_H_out, at PO iteration step: %d !\n", i, cudaGetErrorString(err));
+			fclose(cudalog);
+			return EXIT_FAILURE;
+		}
+		//在CPU端对返回的H数组进行累加（GPU上做累加太累了）
+		EResult = SetcuComplexVector3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+		for (int j = 0; j < blocksPerGrid; j++) {
+			EResult = cuComplexVector3Add(EResult, h_E_out[j]);
+		}
+		//累加后返回磁场数据
+		Ex_out[i] = EResult.x;
+		Ey_out[i] = EResult.y;
+		Ez_out[i] = EResult.z;
+
+		if (i % 1000 == 0) {
+			fprintf(cudalog, "     CUDA kernel performs %d times of %d for Computing Huygens to Field PO.\n", i, NumOut, threadsPerBlock);
+			fclose(cudalog); cudalog = fopen("./cudalog_calculationJ22E.txt", "a");
+		}
+	}
+
+	//清空cudaArray
+	err = cudaFree(d_p_in);	err = cudaFree(d_ds_in);	err = cudaFree(d_J_in);	err = cudaFree(d_JM_in);
+	err = cudaFree(d_E_out);
+
+	delete[] h_E_out;	h_E_out = nullptr;
+	delete[] h_p_in;	h_p_in = nullptr;
+	delete[] h_ds_in;	h_ds_in = nullptr;
+	delete[] h_J_in;	h_J_in = nullptr;
+	delete[] h_JM_in;	h_JM_in = nullptr;
+
+	return 0;
 }

@@ -162,6 +162,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClCompile Include="CUDAPhysicalOptics.cpp" />
     <ClCompile Include="CUDAPOCalculation.cpp" />
     <ClCompile Include="Field.cpp" />
+    <ClCompile Include="HuygensBoxData.cpp" />
     <ClCompile Include="Matrix4D.cpp" />
     <ClCompile Include="Position3D.cpp" />
     <ClCompile Include="RayTracing.cpp" />
@@ -178,6 +179,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="Field.h" />
     <ClInclude Include="GEMS_Memory.h" />
     <ClInclude Include="GraphTrans.h" />
+    <ClInclude Include="HuygensBoxData.h" />
     <ClInclude Include="Matrix4D.h" />
     <ClInclude Include="Position3D.h" />
     <ClInclude Include="RayTracing.h" />

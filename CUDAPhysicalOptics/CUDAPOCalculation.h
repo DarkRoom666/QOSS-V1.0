@@ -1,6 +1,6 @@
 #pragma once
 //Written by Ming Jin, 2018
-//version 0.0
+//version 1.0
 //Physical Optics (Zero Order Current Description on STL Triangles) by CUDA Computation
 //Requires dense mesh!  1/8 lambda
 
@@ -24,26 +24,25 @@ public:
 	CUDAPOCalculation();//构造函数
 	~CUDAPOCalculation();//析构函数
 
-	void setModelFile(const std::string & file);
+	void cleaninput(void);
+	void cleanoutput(void);
 
 
 	static int getCUDAInfo(); // 得到cuda的信息，若返回非0则说明不支持cuda
-
-	int calculateSTL(double _freq, double _dis); // 计算
-
-												 //MirrorReflectionMode;
+											 //MirrorReflectionMode;
 	int calculateF2S();
 	int calculateS2S();
 	int calculateS2F();
 	//ApertureEField to anywhere EField;
-	int calculateF2F();
+	//int calculateF2F();
 
 	//ComputeHuygensAperture
-	int calculateHuygens();
+	int calculateHuygens2E();
+	int calculateHuygens2H();
 
 
-	int calculateField2Current();
-	int calculateCurrent2Field();
+	//int calculateField2Current();
+	//int calculateCurrent2Field();
 
 	//输入关系
 	void setFrequency(float _freq);
@@ -58,6 +57,16 @@ public:
 	//设置输出口面场分布
 	void setOutputAperture(Vector3 _u, Vector3 _v, Vector3 _poscen, float _ds, int _Nu, int _Nv);
 
+	void setHuygensCurrentInput(vector<complex<float>>_Jx, 
+								vector<complex<float>>_Jy,
+								vector<complex<float>>_Jz,
+								vector<complex<float>>_Jmx,
+								vector<complex<float>>_Jmy,
+								vector<complex<float>>_Jmz);
+	void setHuygensPosInput(vector<float> _pxin,
+							vector<float> _pyin,
+							vector<float> _pzin,
+							vector<float> _dssin);
 
 	//输出关系
 	//口面场式的调用
@@ -77,6 +86,9 @@ public:
 	void getSTLlistHfield(vector<complex<double>> &_Hx, vector<complex<double>> &_Hy, vector<complex<double>> &_Hz);
 
 	void SetReturnFloat(void(*returnFloat)(float, void*), void*_user);// 注册回调函数
+
+private:
+
 
 private:
 	//关键参数频率
@@ -116,7 +128,7 @@ private:
 	//文件输入
 	std::string inputFieldFile;
 	std::string stlMirrorFile;
-
+	std::string HuygensFile;
 
 	//注册回调函数
 	void(*returnFloat)(float, void*);

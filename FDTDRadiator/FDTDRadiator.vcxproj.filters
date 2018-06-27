@@ -33,9 +33,6 @@
     <ClInclude Include="Global_Vars.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="HuygensPropagate.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Mathematical_Functions.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -58,6 +55,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Vector3f.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="HuygensBoxData.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -87,6 +87,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Vector3D.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="HuygensBoxData.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
