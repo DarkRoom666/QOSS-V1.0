@@ -40,6 +40,7 @@
 
 #include "DenisovRadiator/showDenisov.h"
 #include "DenisovRadiator/showFDTD.h"
+#include "DenisovRadiator/FDTDModel.h"
 
 #include "Qt/include/WaveguideWidget.h"
 
@@ -281,6 +282,7 @@ private:
 
 	showDenisov *showDenisovPtr;
 	showFDTD * showFDTDPtr;
+	FDTDModel * FDTDModelPtr;
 	WaveguideWidget * waveguideWidget;
 
 };

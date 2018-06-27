@@ -97,10 +97,12 @@ mainWindow::mainWindow(QWidget *parent)
 		for (auto& x : tempActors)
 			renderer->AddActor(x);
 	}
-	else if(1 == myData->getPattern()) // 高阶
+	else if(1 == myData->getPattern()) // 高阶 //这里金铭改啦
 	{
 		showDenisovPtr = new showDenisov;
 		tabWidget->addTab(showDenisovPtr, QString::fromLocal8Bit("Radiator"));
+		FDTDModelPtr = new FDTDModel;
+		tabWidget->addTab(FDTDModelPtr, QString::fromLocal8Bit("FDTDModel"));
 		// 创建默认的镜子
 		myData->createDefaultMirror();
 		//for (int i = 0; i < myData->getNumOfMirrors(); ++i)
@@ -108,6 +110,9 @@ mainWindow::mainWindow(QWidget *parent)
 		{
 			renderer->AddActor(myData->getMirrorByNum(i)->getActor());
 		}
+		//连接 ShowDenisovPtr 和 FDTDModelPtr
+		connect(showDenisovPtr, SIGNAL(SendFreq(double)),
+			FDTDModelPtr, SLOT(RecieveFreq(double)));
 	}
 	else
 	{
