@@ -140,6 +140,7 @@ private slots:
 	void on_PhaseCor();
 	void toReceivePhaseCor(Mirror*);
 	void toReceivePVVAField(Field*);
+	void recieveWGField(Field*); // 接受波导传入源
 
 	void on_DenisovParameters();
 

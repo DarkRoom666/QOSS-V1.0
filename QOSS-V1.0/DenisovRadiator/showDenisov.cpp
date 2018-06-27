@@ -7,6 +7,7 @@
 #include "../util/GraphTrans.h"
 #include "../DenisovRadiator/CodeJin/FieldLJ.h"
 #include "../DenisovRadiator/CodeJin/Normal2GraphTrans.h"
+//#include "../CUDAPhysicalOptics/Normal2GraphTrans.h"
 #include "../Calculation/Matrix4D.h"
 #include "../Calculation/Vector3D.h"
 #include <QHBoxLayout>

@@ -1,5 +1,5 @@
 #include "Field.h"
-#include "Constant_Val.h"
+#include "../QOSS-V1.0/util/Constant_Var.h"
 
 Field::Field()
 {

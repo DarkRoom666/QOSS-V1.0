@@ -118,6 +118,8 @@ mainWindow::mainWindow(QWidget *parent)
 	{
 		waveguideWidget = new WaveguideWidget;
 		tabWidget->addTab(waveguideWidget, QString::fromLocal8Bit("Radiator"));
+		connect(waveguideWidget, SIGNAL(sendField(Field*)),
+			this, SLOT(recieveWGField(Field*)));
 
 		// 创建默认的镜子
 		myData->createDefaultMirror();
@@ -1703,7 +1705,6 @@ void mainWindow::loadFDTDField()
 {
 	if (nullptr != myData->getSourceField()) // 如果已有源了 则会覆盖以前的源
 	{
-		// 判断是否保留原来的限制条件
 		switch (QMessageBox::question(this, tr("Question"),
 			tr("Whether or not to cover the original field?"),
 			QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes))
@@ -1877,6 +1878,34 @@ void mainWindow::toReceivePVVAField(Field *temPtr)
 	fieldNum++;
 	delete PVVAprogressDialog;
 	PVVAprogressDialog = nullptr;
+	updateVtk();
+}
+
+void mainWindow::recieveWGField(Field *ptr)
+{
+	if (nullptr != myData->getSourceField()) // 如果已有源了 则会覆盖以前的源
+	{
+		switch (QMessageBox::question(this, tr("Question"),
+			tr("Whether or not to cover the original field?"),
+			QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes))
+		{
+		case QMessageBox::Yes:
+			renderer->RemoveActor(myData->getSourceField()->getActor());
+			renderer->RemoveActor(myData->getSourceField()->getActor3D());
+			soucreFieldTreeItem->removeChild(soucreFieldTreeItem->child(0));
+			break;
+		case QMessageBox::No:
+			return;
+		default:
+			break;
+		}
+	}
+
+	Field *clone = new Field;
+
+	myData->setSourceField(ptr);
+	renderer->AddActor(ptr->getActor());
+
 	updateVtk();
 }
 

@@ -45,6 +45,10 @@ namespace  userInterface {
 		void on_OK1Btn();
 		void on_finishBtn();
 		void on_defaultBtn();
+		void on_applyBtn();
+
+	signals:
+		void sendField(Field *);
 
 	private:
 		QVTKWidget widget; // vtk ÏÔÊ¾´°¿Ú
@@ -101,6 +105,7 @@ namespace  userInterface {
 
 		QPushButton * defaultBtn;
 		QPushButton * finishBtn;
+		QPushButton * applyBtn;
 
 		int MirrorNum;
 

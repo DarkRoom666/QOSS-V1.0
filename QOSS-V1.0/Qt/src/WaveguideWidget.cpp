@@ -153,10 +153,13 @@ WaveguideWidget::WaveguideWidget(QWidget *parent)
 	unitGroupBox->setLayout(layout3);
 
 	defaultBtn = new QPushButton(tr("default"));
+	applyBtn = new QPushButton(tr("Apply"));
 	finishBtn = new QPushButton(tr("finish"));
+
 	QGridLayout * layout4 = new QGridLayout;
 	layout4->addWidget(defaultBtn, 0, 0);
-	layout4->addWidget(finishBtn, 0, 1);
+	layout4->addWidget(applyBtn, 0, 1);
+	layout4->addWidget(finishBtn, 0, 2);
 
 	QVBoxLayout * rigthlayout = new QVBoxLayout(this);
 	rigthlayout->addWidget(baseGroupBox);
@@ -165,6 +168,7 @@ WaveguideWidget::WaveguideWidget(QWidget *parent)
 	rigthlayout->addLayout(layout4);
 
 	connect(finishBtn, SIGNAL(clicked()), this, SLOT(on_finishBtn()));
+	connect(finishBtn, SIGNAL(clicked()), this, SLOT(on_applyBtn()));
 	connect(defaultBtn, SIGNAL(clicked()), this, SLOT(on_defaultBtn()));
 
 	rWidget = new QWidget();
@@ -186,6 +190,11 @@ WaveguideWidget::WaveguideWidget(QWidget *parent)
 
 WaveguideWidget::~WaveguideWidget()
 {
+	if (field)
+	{
+		delete field;
+		field = nullptr;
+	}
 }
 
 void userInterface::WaveguideWidget::on_columnComboBox(int num)
@@ -258,6 +267,21 @@ void userInterface::WaveguideWidget::on_OK1Btn()
 
 void userInterface::WaveguideWidget::on_finishBtn()
 {
+	on_applyBtn();
+	emit sendField(field);
+
+}
+
+void userInterface::WaveguideWidget::on_defaultBtn()
+{
+	numBaseComboBox->setCurrentIndex(2); // 会自动调用 on_numBaseComboBox
+	columnGapLineEdit->setText(tr("0"));
+	rowGapLineEdit->setText(tr("0"));
+	on_finishBtn();
+}
+
+void userInterface::WaveguideWidget::on_applyBtn()
+{
 	double colData = amLineEdit->text().toDouble();
 	double rowData = phsLineEdit->text().toDouble();
 	amVec[rowIndex][colIndex] = colData;
@@ -274,14 +298,6 @@ void userInterface::WaveguideWidget::on_finishBtn()
 
 	auto window = widget.GetRenderWindow();
 	window->Render();
-}
-
-void userInterface::WaveguideWidget::on_defaultBtn()
-{
-	numBaseComboBox->setCurrentIndex(2); // 会自动调用 on_numBaseComboBox
-	columnGapLineEdit->setText(tr("0"));
-	rowGapLineEdit->setText(tr("0"));
-	on_finishBtn();
 }
 
 void WaveguideWidget::on_numBaseComboBox(int num)

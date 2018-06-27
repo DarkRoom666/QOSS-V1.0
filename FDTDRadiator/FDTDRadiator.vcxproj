@@ -160,6 +160,7 @@
     <ClInclude Include="HuygensBoxData.h" />
     <ClInclude Include="Mathematical_Functions.h" />
     <ClInclude Include="Matrix4D.h" />
+    <ClInclude Include="Normal2GraphTrans.h" />
     <ClInclude Include="Position3D.h" />
     <ClInclude Include="Radiator.h" />
     <ClInclude Include="SourceModeGenerationT.h" />
@@ -174,6 +175,7 @@
     <ClCompile Include="HuygensBoxData.cpp" />
     <ClCompile Include="Mathematical_Functions.cpp" />
     <ClCompile Include="Matrix4D.cpp" />
+    <ClCompile Include="Normal2GraphTrans.cpp" />
     <ClCompile Include="Position3D.cpp" />
     <ClCompile Include="Radiator.cpp" />
     <ClCompile Include="SourceModeGenerationT.cpp" />

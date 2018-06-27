@@ -7,7 +7,7 @@
 #include "Matrix4D.h"	//×ªÒÆ¾ØÕó
 #include "Vector3D.h"	//ÏòÁ¿
 #include "Raytracing.h"
-#include "Constant_Val.h"
+#include "../QOSS-V1.0/util/Constant_Var.h"
 #include "GEMS_Memory.h"
 #include "HuygensBoxData.h"
 #include "Normal2GraphTrans.h"

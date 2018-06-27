@@ -33,9 +33,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Constant_Val.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="cuComplexVector3.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -79,6 +76,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Normal2GraphTrans.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="helper_cuda.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="helper_string.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector3.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

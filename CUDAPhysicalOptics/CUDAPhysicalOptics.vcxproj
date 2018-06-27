@@ -59,6 +59,7 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\..\..\QTVTK.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -171,7 +172,6 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClCompile Include="Vector3D.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Constant_Val.h" />
     <ClInclude Include="cuComplexVector3.h" />
     <ClInclude Include="CUDAFunction.h" />
     <ClInclude Include="CUDAPhysicalOptics.h" />
@@ -180,12 +180,15 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="Field.h" />
     <ClInclude Include="GEMS_Memory.h" />
     <ClInclude Include="GraphTrans.h" />
+    <ClInclude Include="helper_cuda.h" />
+    <ClInclude Include="helper_string.h" />
     <ClInclude Include="HuygensBoxData.h" />
     <ClInclude Include="Matrix4D.h" />
     <ClInclude Include="Normal2GraphTrans.h" />
     <ClInclude Include="Position3D.h" />
     <ClInclude Include="RayTracing.h" />
     <ClInclude Include="STLMirror.h" />
+    <ClInclude Include="Vector3.h" />
     <ClInclude Include="Vector3D.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
