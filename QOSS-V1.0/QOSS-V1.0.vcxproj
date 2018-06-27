@@ -159,6 +159,7 @@
     <ClCompile Include="DenisovRadiator\CodeJin\CRadiator.cpp" />
     <ClCompile Include="DenisovRadiator\CodeJin\FieldLJ.cpp" />
     <ClCompile Include="DenisovRadiator\CodeJin\Mathematical_Functions_Jin.cpp" />
+    <ClCompile Include="DenisovRadiator\CodeJin\Normal2GraphTrans.cpp" />
     <ClCompile Include="DenisovRadiator\CodeJin\OMTfunctions.cpp" />
     <ClCompile Include="DenisovRadiator\CodeJin\qcustomplot.cpp" />
     <ClCompile Include="DenisovRadiator\CodeJin\QPaintField.cpp" />
@@ -555,6 +556,7 @@
     <ClInclude Include="DenisovRadiator\CodeJin\CRadiator.h" />
     <ClInclude Include="DenisovRadiator\CodeJin\FieldLJ.h" />
     <ClInclude Include="DenisovRadiator\CodeJin\Mathematical_Functions_Jin.h" />
+    <ClInclude Include="DenisovRadiator\CodeJin\Normal2GraphTrans.h" />
     <ClInclude Include="DenisovRadiator\CodeJin\OMTfunctions.h" />
     <CustomBuild Include="DenisovRadiator\FDTDModel.h">
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
@@ -574,6 +576,7 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -DUNICODE -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DNDEBUG -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB "-I.\GeneratedFiles" "-I." "-I$(QTDIR)\include" "-I.\GeneratedFiles\$(ConfigurationName)\." "-I$(QTDIR)\include\QtCore" "-I$(QTDIR)\include\QtGui" "-I$(QTDIR)\include\QtWidgets"</Command>
     </CustomBuild>
+    <ClInclude Include="util\GraphTrans.h" />
     <ClInclude Include="VTK\include\WaveguideRadiator.h" />
     <CustomBuild Include="DenisovRadiator\CodeJin\qcustomplot.h">
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
@@ -612,7 +615,6 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -DUNICODE -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DNDEBUG -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB "-I.\GeneratedFiles" "-I." "-I$(QTDIR)\include" "-I.\GeneratedFiles\$(ConfigurationName)\." "-I$(QTDIR)\include\QtCore" "-I$(QTDIR)\include\QtGui" "-I$(QTDIR)\include\QtWidgets"</Command>
     </CustomBuild>
     <ClInclude Include="DenisovRadiator\CodeJin\SourceModeGenerationD.h" />
-    <ClInclude Include="DenisovRadiator\CodeJin\Vector3.h" />
     <CustomBuild Include="DenisovRadiator\QTFDTDThread.h">
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing QTFDTDThread.h...</Message>

@@ -95,6 +95,7 @@ private:
 	bool Field3D;
 
 	vtkSmartPointer<vtkImageActor> fieldInActor;
+	vtkSmartPointer<vtkImageActor> fieldOutActor;
 	bool excisopen;
 	bool modelisopen;
 	bool fdtdcalculated;

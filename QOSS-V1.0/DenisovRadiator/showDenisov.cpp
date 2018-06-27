@@ -4,6 +4,11 @@
 #include "../DenisovRadiator/CodeJin/CRadiator.h"
 #include "../DenisovRadiator/HighOrderRadiator.h"
 #include "../DenisovRadiator/showDenisov.h"
+#include "../util/GraphTrans.h"
+#include "../DenisovRadiator/CodeJin/FieldLJ.h"
+#include "../DenisovRadiator/CodeJin/Normal2GraphTrans.h"
+#include "../Calculation/Matrix4D.h"
+#include "../Calculation/Vector3D.h"
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <cmath>
@@ -306,6 +311,7 @@ void showDenisov::on_btn4() {
 	DrawCut();
 	if (calculated) {
 		OutputExc();
+		OutputOutField();
 	}
 
 }
@@ -894,6 +900,52 @@ void showDenisov::OutputExc() {
 		}
 	}
 	Fieldout.close();
+
+}
+
+void showDenisov::OutputOutField() {
+	
+	Matrix4D RM1;	Vector3D RoAx1(0.0,0.0,1.0);//沿Z轴
+	Matrix4D RM2;	Vector3D RoAx2(0.0,1.0,0.0);//沿Y轴
+
+	int N = 100;
+	SourceModeGenerationD SourceMode(2, 1, 2, m, n, frequency, radius, 0, 0, Nx);
+	//完成绘图，下面更新相应的参数 lcut delbeta1, delbeta2;
+	double phi1;
+	double temp1, temp2, temp3;
+	SourceMode.GetCircularWaveguideProperty(phi1,temp1,temp2,temp3);
+	SourceMode.~SourceModeGenerationD();
+	double angle1;	double angle2;
+	angle1 = 2 * Pi - phic*Pi / 180 + 5.0*Pi / 180 + Pi;
+	angle1 = angle1;
+	angle2 = -phi1;
+	//旋转 注意 此函数的输入参数是度
+	RM1 = RM1.getRotateMatrix(angle1*180/Pi, RoAx1);
+	RM2 = RM2.getRotateMatrix(angle2*180/Pi, RoAx2);
+
+	Vector3 OriNor;	OriNor.set(0.0, 0.0, 1.0);
+	Vector3 OriX;	OriX.set(1.0, 0.0, 0.0);
+	Vector3 ResNor;		Vector3 ResX;
+	ResNor = RM1*(RM2*OriNor);
+	ResX = RM1*(RM2*OriX);
+
+	//平移向量
+	Vector3 PosTran;
+	PosTran.set(-radius*1.5, 0.0, radius*1.5/tan(phi1) + lcut*0.5 );
+	PosTran = RM1*PosTran;
+	
+	GraphTrans Trans;
+	updateSource_n(ResNor, Trans);
+	//updateSource_nx(ResX, Trans);
+	Trans.updateTranslate(PosTran);
+	
+	FieldLJ outfield;
+	outfield.setIsSource(true);
+	outfield.setNM(101, 101);
+	outfield.setPlane(Trans, 2.998e8 / frequency / 4.0);
+	outfield.allocateMemory();
+	outfield.savesource("./outAperture.txt");
+
 }
 
 void showDenisov::OutputLattice() {

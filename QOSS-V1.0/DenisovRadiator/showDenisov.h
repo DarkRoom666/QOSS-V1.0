@@ -85,6 +85,7 @@ private:
 	void OutputModel();
 	void OutputExc();
 	void OutputLattice();
+	void OutputOutField();
 
 private:
 	//Ui::showDenisovClass ui;

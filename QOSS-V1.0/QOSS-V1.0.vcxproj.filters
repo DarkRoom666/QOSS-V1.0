@@ -491,6 +491,9 @@
     <ClCompile Include="GeneratedFiles\Release\moc_FDTDModel.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
+    <ClCompile Include="DenisovRadiator\CodeJin\Normal2GraphTrans.cpp">
+      <Filter>Header Files\Denisov</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="mainwindow.h">
@@ -738,9 +741,6 @@
     <ClInclude Include="DenisovRadiator\CodeJin\SourceModeGenerationD.h">
       <Filter>Header Files\Denisov</Filter>
     </ClInclude>
-    <ClInclude Include="DenisovRadiator\CodeJin\Vector3.h">
-      <Filter>Header Files\Denisov</Filter>
-    </ClInclude>
     <ClInclude Include="DenisovRadiator\CodeJin\Mathematical_Functions_Jin.h">
       <Filter>Header Files\Denisov</Filter>
     </ClInclude>
@@ -758,6 +758,12 @@
     </ClInclude>
     <ClInclude Include="VTK\include\WaveguideRadiator.h">
       <Filter>Header Files\VTK</Filter>
+    </ClInclude>
+    <ClInclude Include="util\GraphTrans.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="DenisovRadiator\CodeJin\Normal2GraphTrans.h">
+      <Filter>Header Files\Denisov</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

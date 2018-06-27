@@ -438,10 +438,19 @@ void FDTDModel::OpenExcFile(void) {
 		FieldLJ exc;
 		exc.readData(fileStr);
 		exc.updateData();
+		FieldLJ out;
+		out.readData("./outAperture.txt");
+		out.updateData();
 
-		if(excisopen)renderer->RemoveActor(fieldInActor);
+
+		if (excisopen) {
+			renderer->RemoveActor(fieldInActor);
+			renderer->RemoveActor(fieldOutActor);
+		}
 		fieldInActor = exc.getActor();
+		fieldOutActor = out.getActor();
 		renderer->AddActor(fieldInActor);
+		renderer->AddActor(fieldOutActor);
 
 		auto window = widget.GetRenderWindow();
 

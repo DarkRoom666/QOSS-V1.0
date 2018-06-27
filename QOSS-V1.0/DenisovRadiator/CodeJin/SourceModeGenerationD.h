@@ -4,7 +4,7 @@
 #include <cmath>
 #include <math.h>//包含贝塞尔函数
 #include "../Calculation/Mathematical_Functions.h"//包含阶乘、贝塞尔函数的一阶导数等基本数学小函数
-#include "Vector3.h"
+#include "../util/Vector3.h"
 //Vector3.h中已经申明过Vector3.h了
 //由于上面的文件中已经引用过"Constant_Val.h"，则下面不需要再添加include申明了
 //#include "Constant_Val.h"//数学常量H文件

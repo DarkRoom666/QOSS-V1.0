@@ -543,6 +543,25 @@ void FieldLJ::save(const std::string & fileName) const
 	}
 }
 
+void FieldLJ::savesource(const std::string & fileName) const {
+	ofstream outfile(fileName);
+	outfile << graphTrans.getTrans_x() << " "
+		<< graphTrans.getTrans_y() << " "
+		<< graphTrans.getTrans_z() << " "
+		<< graphTrans.getRotate_x() << " "
+		<< graphTrans.getRotate_y() << " "
+		<< graphTrans.getRotate_z() << " "
+		<< graphTrans.getRotate_theta() << " "
+		<< N_width  << " " << M_depth << " " << ds << endl;
+	for (int i = 0; i < N_width; i++)
+		for (int j = 0; j < M_depth; j++)
+		{
+			outfile
+				<< abs(Ex[i][j]) << " " << arg(Ex[i][j]) * 180 / 3.1415926 << " "
+				<< abs(Ey[i][j]) << " " << arg(Ey[i][j]) * 180 / 3.1415926 << " " << endl;
+		}
+}
+
 void FieldLJ::updateData()
 {
 	if (is3D)

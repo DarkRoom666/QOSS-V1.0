@@ -13,7 +13,7 @@
 
 #include "../util/GraphTrans.h"
 
-#include "Vector3.h"
+#include "../util/Vector3.h"
 
 #include <vtkSmartPointer.h>
 #include <vtkImageActor.h>
@@ -69,6 +69,7 @@ public:
 	double getDepth() const { return data[8]; }
 
 	void save(const std::string &fileName) const;
+	void savesource(const std::string &fileName) const;
 
 	virtual void updateData();
 
