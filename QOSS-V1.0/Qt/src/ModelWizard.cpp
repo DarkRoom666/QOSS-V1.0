@@ -19,6 +19,7 @@ namespace  userInterface {
 		setWizardStyle(ModernStyle);
 		//setPixmap(QWizard::BannerPixmap, QPixmap("Qt/images/WizardBanner.png"));
 		//setPixmap(QWizard::BackgroundPixmap, QPixmap(":/images/background.png"));
+		//next();
 
 		resize(800, 600);
 
@@ -362,6 +363,9 @@ namespace  userInterface {
 		
 		if (field("lowerRadioButton").toBool())
 		{
+			setSubTitle(tr("Specify basic information about the class for which you "
+				"want to generate skeleton source code files."));
+
 			typeComboBox->setCurrentIndex(0);
 			typeComboBox->setEnabled(false);
 			rotationComboBox->setCurrentIndex(1);
@@ -389,6 +393,9 @@ namespace  userInterface {
 		}
 		else if (field("higherRadioButton").toBool())
 		{
+			setSubTitle(tr("Specify basic information about the class for which you "
+				"want to generate skeleton source code files."));
+
 			typeComboBox->setCurrentIndex(0);
 			typeComboBox->setEnabled(false);
 			rotationComboBox->setCurrentIndex(1);
@@ -416,6 +423,8 @@ namespace  userInterface {
 		}
 		else if (field("waveguideRadioButton").toBool())
 		{
+			setSubTitle(tr("Please set the source after completion."));
+
 			typeComboBox->setEnabled(true);
 			rotationComboBox->setEnabled(false);
 			radiusLabel->setHidden(true);
@@ -424,10 +433,11 @@ namespace  userInterface {
 
 			MyData::getInstance()->setPattern(2);
 			groupBox->setHidden(true);
-			recGroupBox->setHidden(false);
+			//recGroupBox->setHidden(false);
 			imgLabel->setHidden(true);
 			imgLabel2->setHidden(true);
 			//QWizard::NextButton;
+
 		}
 		fre = field("freLine").toDouble();
 		switch (field("freUnit").toInt())

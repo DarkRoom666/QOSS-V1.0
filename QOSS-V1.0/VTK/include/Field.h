@@ -26,7 +26,7 @@ class Field: public BasicParameters
 {
 public:
 	Field();
-	//Field(const Field & _field); // 重写构造函数
+	Field(const Field & _field); // 重写构造函数
 	//Field& operator =(const Field & _field);
 
 	virtual ~Field();

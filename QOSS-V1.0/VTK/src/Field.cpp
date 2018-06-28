@@ -32,6 +32,40 @@ Field::Field()
 	efficiency = 1.0;
 }
 
+Field::Field(const Field & _field)
+	:N_width(_field.N_width), M_depth(_field.M_depth), ds(_field.ds),
+	isSource(_field.isSource), isPhs(_field.isPhs), isLinear(_field.isLinear),
+	is3D(_field.is3D), content(_field.content), efficiency(_field.efficiency),
+	scalarCorrelationCoefficient(_field.scalarCorrelationCoefficient),
+	vectorCorrelationCoefficient(_field.vectorCorrelationCoefficient)
+{
+	actor3D = vtkSmartPointer<vtkActor>::New();
+	actor = vtkSmartPointer<vtkImageActor>::New();
+	data.resize(2);
+	data[0] = _field.data[0];
+	data[1] = _field.data[1];
+	graphTrans = _field.graphTrans;
+	allocateMemory();
+	for (int i = 0; i < N_width; i++)
+		for (int j = 0; j < M_depth; j++)
+		{
+			Ex[i][j] = _field.Ex[i][j];
+			Ey[i][j] = _field.Ey[i][j];
+		}
+
+	if (!isSource)
+	{
+		for (int i = 0; i < N_width; i++)
+			for (int j = 0; j < M_depth; j++)
+			{
+				Ez[i][j] = _field.Ez[i][j];
+				Hx[i][j] = _field.Hx[i][j];
+				Hy[i][j] = _field.Hy[i][j];
+				Hz[i][j] = _field.Hz[i][j];
+			}
+	}
+}
+
 Field::~Field()
 {
 	freeMemory();
@@ -124,6 +158,7 @@ void Field::setField(complex<double>** _Ex, complex<double>** _Ey,
 void Field::setField(const vector<vector<complex<double>>>& _Ex, 
 	const vector<vector<complex<double>>>& _Ey)
 {
+	isSource = true;
 	allocateMemory();
 	for (int i = 0; i < N_width; i++)
 		for (int j = 0; j < M_depth; j++)

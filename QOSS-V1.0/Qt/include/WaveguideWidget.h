@@ -118,6 +118,8 @@ namespace  userInterface {
 		Field * field;
 		shared_ptr<WaveguideRadiator> waveguideRadiator;
 
+		bool isReadSource;
+
 	};
 }
 

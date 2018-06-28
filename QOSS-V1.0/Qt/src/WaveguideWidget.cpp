@@ -168,7 +168,7 @@ WaveguideWidget::WaveguideWidget(QWidget *parent)
 	rigthlayout->addLayout(layout4);
 
 	connect(finishBtn, SIGNAL(clicked()), this, SLOT(on_finishBtn()));
-	connect(finishBtn, SIGNAL(clicked()), this, SLOT(on_applyBtn()));
+	connect(applyBtn, SIGNAL(clicked()), this, SLOT(on_applyBtn()));
 	connect(defaultBtn, SIGNAL(clicked()), this, SLOT(on_defaultBtn()));
 
 	rWidget = new QWidget();
@@ -185,6 +185,7 @@ WaveguideWidget::WaveguideWidget(QWidget *parent)
 	field = new Field;
 	waveguideRadiator = std::make_shared<WaveguideRadiator>();
 
+	isReadSource = false;
 
 }
 
@@ -263,10 +264,13 @@ void userInterface::WaveguideWidget::on_OK1Btn()
 	auto window = widget.GetRenderWindow();
 	window->Render();
 	
+	isReadSource = true;
 }
 
 void userInterface::WaveguideWidget::on_finishBtn()
 {
+	if (!isReadSource)
+		return;
 	on_applyBtn();
 	emit sendField(field);
 
@@ -274,6 +278,8 @@ void userInterface::WaveguideWidget::on_finishBtn()
 
 void userInterface::WaveguideWidget::on_defaultBtn()
 {
+	if (!isReadSource)
+		return;
 	numBaseComboBox->setCurrentIndex(2); // 会自动调用 on_numBaseComboBox
 	columnGapLineEdit->setText(tr("0"));
 	rowGapLineEdit->setText(tr("0"));
@@ -282,6 +288,9 @@ void userInterface::WaveguideWidget::on_defaultBtn()
 
 void userInterface::WaveguideWidget::on_applyBtn()
 {
+	if (!isReadSource)
+		return;
+
 	double colData = amLineEdit->text().toDouble();
 	double rowData = phsLineEdit->text().toDouble();
 	amVec[rowIndex][colIndex] = colData;

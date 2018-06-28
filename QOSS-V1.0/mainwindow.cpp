@@ -118,12 +118,13 @@ mainWindow::mainWindow(QWidget *parent)
 	{
 		waveguideWidget = new WaveguideWidget;
 		tabWidget->addTab(waveguideWidget, QString::fromLocal8Bit("Radiator"));
+		tabWidget->setCurrentIndex(1);
 		connect(waveguideWidget, SIGNAL(sendField(Field*)),
 			this, SLOT(recieveWGField(Field*)));
 
 		// 创建默认的镜子
 		myData->createDefaultMirror();
-		GraphTrans graphTrans;
+		/*GraphTrans graphTrans;
 		graphTrans.setGraphTransPar(0, 0, 0, 0, 1, 0, 0);
 		Mirror * mirror = MirrorFactory::getMirror(PLANEMIRROR, graphTrans);
 		renderer->AddActor(mirror->getActor());
@@ -198,7 +199,7 @@ mainWindow::mainWindow(QWidget *parent)
 		renderer->AddActor(mirror->getActor());
 		graphTrans.setGraphTransPar(1.01, -0.81, 0, 0, 1, 0, 0);
 		mirror = MirrorFactory::getMirror(PLANEMIRROR, graphTrans);
-		renderer->AddActor(mirror->getActor());
+		renderer->AddActor(mirror->getActor());*/
 
 		renderer->AddActor(myData->getMirrorByNum(0)->getActor());
 	}
@@ -1883,6 +1884,7 @@ void mainWindow::toReceivePVVAField(Field *temPtr)
 
 void mainWindow::recieveWGField(Field *ptr)
 {
+	tabWidget->setCurrentIndex(0);
 	if (nullptr != myData->getSourceField()) // 如果已有源了 则会覆盖以前的源
 	{
 		switch (QMessageBox::question(this, tr("Question"),
@@ -1901,10 +1903,10 @@ void mainWindow::recieveWGField(Field *ptr)
 		}
 	}
 
-	Field *clone = new Field;
-
-	myData->setSourceField(ptr);
-	renderer->AddActor(ptr->getActor());
+	Field *clone = new Field(*ptr);
+	clone->updateData();
+	myData->setSourceField(clone);
+	renderer->AddActor(clone->getActor());
 
 	updateVtk();
 }
