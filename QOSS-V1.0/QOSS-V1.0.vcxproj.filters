@@ -494,6 +494,9 @@
     <ClCompile Include="DenisovRadiator\CodeJin\Normal2GraphTrans.cpp">
       <Filter>Header Files\Denisov</Filter>
     </ClCompile>
+    <ClCompile Include="VTK\src\HighRadiatorShow.cpp">
+      <Filter>Source Files\VTK</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="mainwindow.h">
@@ -764,6 +767,9 @@
     </ClInclude>
     <ClInclude Include="DenisovRadiator\CodeJin\Normal2GraphTrans.h">
       <Filter>Header Files\Denisov</Filter>
+    </ClInclude>
+    <ClInclude Include="VTK\include\HighRadiatorShow.h">
+      <Filter>Header Files\VTK</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

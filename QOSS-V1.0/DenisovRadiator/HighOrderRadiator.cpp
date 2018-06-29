@@ -23,7 +23,6 @@ void HighOrderRadiator::SetRadiatorBasicParas(double _Ra, double _lcut, double _
 	phic = _phic*Pi / 180;
 }
 //设置
-
 //设置辐射器扰动参数
 void HighOrderRadiator::SetRadiatorTurbulenceParas(double _delBeta1, double _delBeta2, double _z0_1, double _z0_2, double _ls_1, double _ls_2, double _lc_1, double _lc_2, double _mag1, double _mag2) {
 	l1 = 1;
@@ -264,7 +263,7 @@ inline Vector3 HighOrderRadiator::DelTVec(double _phi, double _t) {
 	return result;
 }
 //返回法向方向
-inline Vector3 HighOrderRadiator::Normal(double _phi, double _t) {
+Vector3 HighOrderRadiator::Normal(double _phi, double _t) {
 	Vector3 dPhi;
 	Vector3 dT;
 	Vector3 result;
@@ -289,7 +288,7 @@ inline Vector3 HighOrderRadiator::Normal(double _phi, double _t) {
 	return result;
 }
 //判断是否在辐射器曲面上 _phi输入范围 0~2Pi
-inline bool HighOrderRadiator::OnRadiatorSurface(double _phi, double _t) {
+bool HighOrderRadiator::OnRadiatorSurface(double _phi, double _t) {
 	bool on;
 	_t = _t + Zcut;
 	//不在区域中
@@ -357,7 +356,7 @@ bool HighOrderRadiator::CalculateReflectionPoint(Vector3 StartPoint, Vector3 Inc
 }
 
 //用于设定端口光线描述的参数
-void HighOrderRadiator::SetModeParas(double _freq, double _m, double _n, double _Ra, double _zcut) {
+void HighOrderRadiator::SetModeParas(double _freq, int _m, int _n, double _Ra, double _zcut) {
 	frequency = _freq;
 	m = _m;
 	n = _n;

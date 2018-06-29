@@ -7,7 +7,6 @@
 #include "../util/GraphTrans.h"
 #include "../DenisovRadiator/CodeJin/FieldLJ.h"
 #include "../DenisovRadiator/CodeJin/Normal2GraphTrans.h"
-//#include "../CUDAPhysicalOptics/Normal2GraphTrans.h"
 #include "../Calculation/Matrix4D.h"
 #include "../Calculation/Vector3D.h"
 #include <QHBoxLayout>
@@ -67,6 +66,7 @@ showDenisov::showDenisov(QWidget *parent)
 	connect(btn4, SIGNAL(clicked()), this, SLOT(on_btn4()));
 	connect(btn5, SIGNAL(clicked()), this, SLOT(on_btn5()));
 	connect(btn6, SIGNAL(clicked()), this, SLOT(on_btn6()));
+	connect(btn7, SIGNAL(clicked()), this, SLOT(on_btn7()));
 	//连接Denisov计算得到的功率曲线
 	connect(Denisov1, SIGNAL(SendCoefficients(double, double, double, double, int)), this, SLOT(RecieveCoefficients(double, double ,double, double, int)));
 	//连接Denisov计算得到的辐射器切向场
@@ -313,8 +313,8 @@ void showDenisov::on_btn4() {
 	if (calculated) {
 		OutputExc();
 		OutputOutField();
+		OutputSTLOutField();
 	}
-
 }
 
 void showDenisov::DrawCut() {
@@ -466,6 +466,17 @@ void showDenisov::on_btn6() {
 	showDenisov::DrawSurfaceJ();
 	calculated = false;
 	on_btn4();
+}
+//这个函数传回参数给主界面
+void showDenisov::on_btn7() {
+	//Confirm and Send Signal
+	//内部光线追踪用设定
+	HOR.SetRadiatorBasicParas(radius,lcut, zcut, phic);
+	HOR.SetRadiatorTurbulenceParas(delbeta1, delbeta2, zc1, zc2, ls1, ls2, lc1, lc2, mag1, mag2);
+	//波导模式用设定
+	HOR.SetModeParas(frequency,m,n,radius,zcut);
+	emit SendHighOrder(&HOR);
+
 }
 
 void showDenisov::WriteAllParas() {
@@ -647,19 +658,23 @@ void showDenisov::CreateButtons() {
 	btn4 = new QPushButton(tr("SetCUT"));	btn4->setMaximumWidth(100);
 	btn5 = new QPushButton(tr("Save"));		btn5->setMaximumWidth(100);
 	btn6 = new QPushButton(tr("Load"));		btn6->setMaximumWidth(100);
+	btn7 = new QPushButton(tr("Confirm"));  btn7->setMaximumWidth(100);
 
 	Buttons = new QGroupBox(tr("Buttons")); Buttons->setMaximumWidth(300);
 	QVBoxLayout *ButtonV = new QVBoxLayout(Buttons);
 	QHBoxLayout *ButtonH1 = new QHBoxLayout;
 	QHBoxLayout *ButtonH2 = new QHBoxLayout;
+	QHBoxLayout *ButtonH3 = new QHBoxLayout;
 	ButtonH1->addWidget(btn1);
 	ButtonH1->addWidget(btn2);
 	ButtonH1->addWidget(btn3);
 	ButtonH2->addWidget(btn4);
 	ButtonH2->addWidget(btn5);
 	ButtonH2->addWidget(btn6);
+	ButtonH3->addWidget(btn7);
 	ButtonV->addLayout(ButtonH1);
 	ButtonV->addLayout(ButtonH2);
+	ButtonV->addLayout(ButtonH3);
 }
 
 void showDenisov::CreateBasicParas() {
@@ -932,7 +947,7 @@ void showDenisov::OutputOutField() {
 
 	//平移向量
 	Vector3 PosTran;
-	PosTran.set(-radius*1.5, 0.0, radius*1.5/tan(phi1) + lcut*0.5 );
+	PosTran.set(-radius*2, 0.0, radius*2/tan(phi1) + lcut*0.5 );
 	PosTran = RM1*PosTran;
 	
 	GraphTrans Trans;
@@ -943,14 +958,56 @@ void showDenisov::OutputOutField() {
 	FieldLJ outfield;
 	outfield.setIsSource(true);
 	outfield.setNM(101, 101);
-	outfield.setPlane(Trans, 2.998e8 / frequency / 4.0);
+	outfield.setPlane(Trans, 2.998e8 / frequency / 3.0);
 	outfield.allocateMemory();
 	outfield.savesource("./outAperture.txt");
 
 }
 
+void showDenisov::OutputSTLOutField() {
+	Matrix4D RM1;	Vector3D RoAx1(0.0, 0.0, 1.0);//沿Z轴
+	Matrix4D RM2;	Vector3D RoAx2(0.0, 1.0, 0.0);//沿Y轴
+
+	int N = 100;
+	SourceModeGenerationD SourceMode(2, 1, 2, m, n, frequency, radius, 0, 0, Nx);
+	//完成绘图，下面更新相应的参数 lcut delbeta1, delbeta2;
+	double phi1;
+	double temp1, temp2, temp3;
+	SourceMode.GetCircularWaveguideProperty(phi1, temp1, temp2, temp3);
+	SourceMode.~SourceModeGenerationD();
+	double angle1;	double angle2;
+	angle1 = 2 * Pi - phic*Pi / 180 + 5.0*Pi / 180 + Pi + Pi;
+	angle1 = angle1;
+	angle2 = -phi1;
+	//旋转 注意 此函数的输入参数是度
+	RM1 = RM1.getRotateMatrix(angle1 * 180 / Pi, RoAx1);
+	RM2 = RM2.getRotateMatrix(angle2 * 180 / Pi, RoAx2);
+
+	Vector3 OriNor;	OriNor.set(0.0, 0.0, 1.0);
+	Vector3 OriX;	OriX.set(1.0, 0.0, 0.0);
+	Vector3 ResNor;		Vector3 ResX;
+	ResNor = RM1*(RM2*OriNor);
+	ResX = RM1*(RM2*OriX);
+
+	//平移向量
+	Vector3 PosTran;
+	PosTran.set(0, 0.0, 0.046*2 / tan(phi1) + lcut*0.5);
+	PosTran = RM1*PosTran;
+
+	GraphTrans Trans;
+	updateSource_n(ResNor, Trans);
+	//updateSource_nx(ResX, Trans);
+	Trans.updateTranslate(PosTran);
+
+	FieldLJ outfield;
+	outfield.setIsSource(true);
+	outfield.setNM(101, 101);
+	outfield.setPlane(Trans, 2.998e8 / frequency / 3.0);
+	outfield.allocateMemory();
+	outfield.savesource("./outSTLAperture.txt");
+}
+
 void showDenisov::OutputLattice() {
-	HighOrderRadiator HOR;
 	HOR.SetRadiatorBasicParas(radius,zcut,phic);
 	HOR.SetRadiatorTurbulenceParas(delbeta1, delbeta2, zc1, zc2, ls1, ls2, lc1, lc2, mag1, mag2);
 	SourceModeGenerationD SourceMode(2, 1, 2, m, n, frequency, radius, 0, 0, 100);

@@ -479,6 +479,7 @@
     <ClCompile Include="VTK\src\Field.cpp" />
     <ClCompile Include="VTK\src\Gaussain.cpp" />
     <ClCompile Include="VTK\src\LightShow.cpp" />
+    <ClCompile Include="VTK\src\HighRadiatorShow.cpp" />
     <ClCompile Include="VTK\src\LimitBox.cpp" />
     <ClCompile Include="VTK\src\LowOrderRadiator.cpp" />
     <ClCompile Include="VTK\src\Mirror.cpp" />
@@ -577,6 +578,7 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -DUNICODE -DWIN32 -DQT_DLL -DQT_NO_DEBUG -DNDEBUG -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB "-I.\GeneratedFiles" "-I." "-I$(QTDIR)\include" "-I.\GeneratedFiles\$(ConfigurationName)\." "-I$(QTDIR)\include\QtCore" "-I$(QTDIR)\include\QtGui" "-I$(QTDIR)\include\QtWidgets"</Command>
     </CustomBuild>
     <ClInclude Include="util\GraphTrans.h" />
+    <ClInclude Include="VTK\include\HighRadiatorShow.h" />
     <ClInclude Include="VTK\include\WaveguideRadiator.h" />
     <CustomBuild Include="DenisovRadiator\CodeJin\qcustomplot.h">
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>

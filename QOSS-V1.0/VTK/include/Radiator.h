@@ -15,15 +15,16 @@
 
 #include "../../Calculation/SourceModeGeneration.h"
 
-enum RadiatorType
-{
-	LOWORDER = 0
-};
-
 
 class Radiator
 {
 public:
+	enum RadiatorType
+	{
+		LOWORDER = 0,
+		HIGHT
+
+	};
 
 	Radiator();
 	virtual ~Radiator();

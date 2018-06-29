@@ -47,7 +47,7 @@ public:
 	//设置一级镜参数
 	void SetFirstMirrorParas(double _F1, double _F2, double _Rc, double _Phi, double _Lcut);
 	//设置光线追踪的源
-	void SetModeParas(double _freq, double _m, double _n, double _Ra, double _zcut);
+	void SetModeParas(double _freq, int _m, int _n, double _Ra, double _zcut);
 
 	//返回一级镜的点阵 二维数组
 	int GetFirstMirrorLattice(vector<vector<Vector3>> &_lattice, double _ds);
@@ -62,7 +62,7 @@ public:
 	inline Vector3 Position(double _phi, double _t);
 	inline Vector3 DelPhiVec(double _phi, double _t);
 	inline Vector3 DelTVec(double _phi, double _t);
-	inline Vector3 Normal(double _phi, double _t);
+	Vector3 Normal(double _phi, double _t);
 	//输入范围 0~2pi
 	bool OnRadiatorSurface(double _phi, double _t);
 	

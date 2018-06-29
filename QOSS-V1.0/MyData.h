@@ -72,6 +72,7 @@ public:
 
 	// 生成辐射器
 	void createRadiator();
+	void setRadiator(const shared_ptr<Radiator>&);
 	shared_ptr<Radiator> getRadiator() { return radiator; }
 
 	// 生成波导辐射器

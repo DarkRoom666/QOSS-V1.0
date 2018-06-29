@@ -29,7 +29,7 @@ void Radiator::setSource(shared_ptr<calculation::SourceModeGeneration> source)
 	radius = source->getRadius();
 }
 
-RadiatorType Radiator::getMirrorsType() const
+Radiator::RadiatorType Radiator::getMirrorsType() const
 {
 	return type;
 }

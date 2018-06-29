@@ -245,7 +245,7 @@ void MyData::createRadiator()
 {
 	if (0 == pattern) // µÍ½×
 	{
-		radiator = RadiatorFactory::getRadiator(LOWORDER, source);
+		radiator = RadiatorFactory::getRadiator(Radiator::LOWORDER, source);
 		radiator->calActorModel();
 		radiator->calActorRay();
 	}
@@ -260,6 +260,11 @@ void MyData::createRadiator()
 		//radiator->calActorRay();
 	}
 	
+}
+
+void MyData::setRadiator(const shared_ptr<Radiator>& ptr)
+{
+	radiator = ptr;
 }
 
 void MyData::setWaveguideRadiator(const shared_ptr<WaveguideRadiator>& ptr)

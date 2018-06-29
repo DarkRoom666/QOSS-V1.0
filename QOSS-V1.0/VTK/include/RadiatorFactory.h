@@ -16,7 +16,7 @@ class RadiatorFactory
 {
 public:
 
-	static std::shared_ptr<Radiator> getRadiator(RadiatorType type, 
+	static std::shared_ptr<Radiator> getRadiator(Radiator::RadiatorType type,
 		shared_ptr<calculation::SourceModeGeneration>);
 
 private:

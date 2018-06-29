@@ -143,6 +143,7 @@ private slots:
 	void recieveWGField(Field*); // 接受波导传入源
 
 	void on_DenisovParameters();
+	void RecieveHighOrder(HighOrderRadiator*);
 
 	// ------------------- 右键函数 ----------------------------------
 	void on_treeWidget_ContextMenuRequested(QPoint pos);// 右键菜单

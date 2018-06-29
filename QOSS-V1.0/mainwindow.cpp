@@ -13,6 +13,7 @@
 #include "VTK/include/LimitBox.h"
 #include "VTK/include/LightShow.h"
 #include "VTK/include/Radiator.h"
+#include "VTK/include/HighRadiatorShow.h"
 
 #include "util/Definition.h"
 
@@ -108,11 +109,13 @@ mainWindow::mainWindow(QWidget *parent)
 		//for (int i = 0; i < myData->getNumOfMirrors(); ++i)
 		for (int i = 0; i < 4; ++i)
 		{
-			renderer->AddActor(myData->getMirrorByNum(i)->getActor());
+			//renderer->AddActor(myData->getMirrorByNum(i)->getActor());
 		}
 		//连接 ShowDenisovPtr 和 FDTDModelPtr
 		connect(showDenisovPtr, SIGNAL(SendFreq(double)),
 			FDTDModelPtr, SLOT(RecieveFreq(double)));
+		connect(showDenisovPtr, SIGNAL(SendHighOrder(HighOrderRadiator*)),
+			this, SLOT(RecieveHighOrder(HighOrderRadiator*)));
 	}
 	else
 	{
@@ -1916,6 +1919,14 @@ void mainWindow::on_DenisovParameters()
 	//showDenisovPtr = new showDenisov; 
 	//showDenisovPtr->show();
 	//showDenisovPtr->setWindowFlags(Qt::WindowStaysOnTopHint); // 子窗口保持置顶
+}
+
+void mainWindow::RecieveHighOrder(HighOrderRadiator *prt)
+{
+	shared_ptr<HighRadiatorShow> HRSptr = std::make_shared<HighRadiatorShow>(prt);
+	HRSptr->calActorRay();
+	renderer->AddActor(HRSptr->getActorRay());
+	updateVtk();
 }
 
 void mainWindow::on_treeWidget_ContextMenuRequested(QPoint pos)

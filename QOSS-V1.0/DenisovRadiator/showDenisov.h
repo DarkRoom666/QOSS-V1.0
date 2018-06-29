@@ -20,6 +20,7 @@
 #include <windows.h>
 #include <Vector>
 #include <complex>
+#include "../DenisovRadiator/HighOrderRadiator.h"
 
 //#include "ui_showDenisov.h"		//这个是QT生成的
 
@@ -49,6 +50,7 @@ private slots :
 	void on_btn4();
 	void on_btn5();//Save
 	void on_btn6();//Load
+	void on_btn7();//Confirm
 	void ChangeValue(double _in);
 	void ChangeText(QString _in);
 	void BtnClose();
@@ -66,6 +68,7 @@ private: signals:
 
 public: signals:
 	void SendFreq(double _freq);
+	void SendHighOrder(HighOrderRadiator *_HOR);
 
 private:
 	void updatePaint();
@@ -86,6 +89,7 @@ private:
 	void OutputExc();
 	void OutputLattice();
 	void OutputOutField();
+	void OutputSTLOutField();
 
 private:
 	//Ui::showDenisovClass ui;
@@ -108,6 +112,7 @@ private:
 	QPushButton *btn4;	//SetCut
 	QPushButton *btn5;	//Save
 	QPushButton *btn6;	//Load
+	QPushButton *btn7;  //Confirm 回传
 
 	//Basic Parameters InterFace
 	QGroupBox *BasicParas;
@@ -191,6 +196,8 @@ private:
 	vector<vector<double>> SJ;
 
 	vector<double> EpsModel;
+	
+	HighOrderRadiator HOR;
 
 	
 };
